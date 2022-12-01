@@ -7,7 +7,7 @@ use std::{
 };
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
-pub struct Calories(i32);
+struct Calories(i32);
 
 impl Display for Calories {
     fn fmt(&self, f: &mut Formatter) -> Result<(), fmt::Error> {
@@ -32,7 +32,7 @@ impl Sub for Calories {
 }
 
 #[derive(Clone, Debug)]
-pub struct Elf {
+struct Elf {
     pub calories: Vec<Calories>,
 }
 
