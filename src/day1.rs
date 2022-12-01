@@ -2,6 +2,7 @@ use std::{
     fmt::{self, Display, Formatter},
     fs::File,
     io::{BufRead, BufReader},
+    iter::Sum,
     ops::{Add, Sub},
     path::Path,
 };
@@ -28,6 +29,15 @@ impl Sub for Calories {
 
     fn sub(self, other: Calories) -> Calories {
         Calories(self.0 - other.0)
+    }
+}
+
+impl Sum<Self> for Calories {
+    fn sum<I>(iter: I) -> Self
+    where
+        I: Iterator<Item = Self>,
+    {
+        iter.fold(Calories(0), |acc, e| acc + e)
     }
 }
 
@@ -82,20 +92,19 @@ fn load_elves_calories_from_file(path: impl AsRef<Path>) -> anyhow::Result<Vec<E
 pub fn day1() -> anyhow::Result<()> {
     let elves = load_elves_calories_from_file("data/day1.txt")?;
 
-    let mut sorted_elves = elves.clone();
-    sorted_elves.sort_by(|a, b| a.total_calories().cmp(&b.total_calories()));
+    let mut sorted_elves = elves;
+    sorted_elves.sort_by_key(|e| e.total_calories());
 
-    let max_elve = sorted_elves.last()
-        .ok_or(anyhow::anyhow!("No elves found"))?;
+    let max_elve = sorted_elves
+        .last()
+        .ok_or_else(|| anyhow::anyhow!("No elves found"))?;
 
     println!("Day 1.1: {}", max_elve.total_calories());
 
-    let max_3_elves = sorted_elves.iter()
-        .rev()
-        .take(3).collect::<Vec<_>>();
+    let max_3_elves = sorted_elves.iter().rev().take(3).collect::<Vec<_>>();
 
-    let max_3_elves_calories = max_3_elves.iter()
-        .fold(Calories(0), |acc, e| acc + e.total_calories());
+    let max_3_calories = max_3_elves.iter().map(|e| e.total_calories());
+    let max_3_elves_calories: Calories = max_3_calories.sum();
 
     println!("Day 1.2: {}", max_3_elves_calories);
 
@@ -110,6 +119,11 @@ mod tests {
 
     use super::*;
 
+    fn load_elves_calories_from_string(s: impl AsRef<str>) -> anyhow::Result<Vec<Elf>> {
+        let reader = Cursor::new(s.as_ref());
+        load_elves_calories_from_reader(reader)
+    }
+
     #[test]
     fn elf_total_calories() {
         let elf = Elf::new(vec![Calories(1), Calories(2), Calories(3)]);
@@ -118,14 +132,16 @@ mod tests {
 
     #[test]
     fn load_elves_calories_from_reader_data() {
-        let input = r#"1
+        let elves = load_elves_calories_from_string(
+            r#"1
 2
 3
 
 4
-5"#;
-        let reader = Cursor::new(input);
-        let elves = load_elves_calories_from_reader(reader).unwrap();
+5"#,
+        )
+        .unwrap();
+
         assert_eq!(elves.len(), 2);
         assert_eq!(elves[0].total_calories(), Calories(6));
         assert_eq!(elves[1].total_calories(), Calories(9));
@@ -133,7 +149,8 @@ mod tests {
 
     #[test]
     fn load_elves_calories_from_reader_weird() {
-        let input = r#"
+        let elves = load_elves_calories_from_string(
+            r#"
 
 
 1
@@ -146,9 +163,10 @@ mod tests {
 5
 
 
-"#;
-        let reader = Cursor::new(input);
-        let elves = load_elves_calories_from_reader(reader).unwrap();
+"#,
+        )
+        .unwrap();
+
         assert_eq!(elves.len(), 2);
         assert_eq!(elves[0].total_calories(), Calories(6));
         assert_eq!(elves[1].total_calories(), Calories(9));
@@ -156,9 +174,8 @@ mod tests {
 
     #[test]
     fn load_elves_calories_from_reader_empty() {
-        let input = "";
-        let reader = Cursor::new(input);
-        let elves = load_elves_calories_from_reader(reader).unwrap();
+        let elves = load_elves_calories_from_string("").unwrap();
+
         assert_eq!(elves.len(), 0);
     }
 }
