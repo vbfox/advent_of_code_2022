@@ -4,12 +4,28 @@ use std::{
     fs::File,
     io::{BufRead, BufReader},
     iter::Sum,
+    num::ParseIntError,
     ops::{Add, Sub},
     path::Path,
+    str::FromStr,
 };
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
 struct Calories(i32);
+
+impl From<i32> for Calories {
+    fn from(value: i32) -> Self {
+        Self(value)
+    }
+}
+
+impl FromStr for Calories {
+    type Err = ParseIntError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        s.parse::<i32>().map(Self)
+    }
+}
 
 impl Display for Calories {
     fn fmt(&self, f: &mut Formatter) -> Result<(), fmt::Error> {
@@ -66,12 +82,10 @@ fn load_elves_calories_from_reader(reader: impl BufRead) -> anyhow::Result<Vec<E
         if line.is_empty() {
             if !current_calories.is_empty() {
                 elves.push(Elf::new(current_calories));
-                current_calories = Vec::new();
+                current_calories = Default::default();
             }
         } else {
-            let calories_int = line.parse::<i32>()?;
-            let calories = Calories(calories_int);
-            current_calories.push(calories);
+            current_calories.push(line.parse()?);
         }
     }
 
