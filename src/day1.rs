@@ -31,6 +31,7 @@ impl Sub for Calories {
     }
 }
 
+#[derive(Clone, Debug)]
 pub struct Elf {
     pub calories: Vec<Calories>,
 }
@@ -81,12 +82,22 @@ fn load_elves_calories_from_file(path: impl AsRef<Path>) -> anyhow::Result<Vec<E
 pub fn day1() -> anyhow::Result<()> {
     let elves = load_elves_calories_from_file("data/day1.txt")?;
 
-    let max_elve = elves
-        .iter()
-        .max_by(|a, b| a.total_calories().cmp(&b.total_calories()))
+    let mut sorted_elves = elves.clone();
+    sorted_elves.sort_by(|a, b| a.total_calories().cmp(&b.total_calories()));
+
+    let max_elve = sorted_elves.last()
         .ok_or(anyhow::anyhow!("No elves found"))?;
 
-    println!("Day 1: {}", max_elve.total_calories());
+    println!("Day 1.1: {}", max_elve.total_calories());
+
+    let max_3_elves = sorted_elves.iter()
+        .rev()
+        .take(3).collect::<Vec<_>>();
+
+    let max_3_elves_calories = max_3_elves.iter()
+        .fold(Calories(0), |acc, e| acc + e.total_calories());
+
+    println!("Day 1.2: {}", max_3_elves_calories);
 
     Ok(())
 }
