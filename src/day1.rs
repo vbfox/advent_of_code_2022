@@ -1,4 +1,5 @@
 use std::{
+    cmp::Reverse,
     fmt::{self, Display, Formatter},
     fs::File,
     io::{BufRead, BufReader},
@@ -90,21 +91,17 @@ fn load_elves_calories_from_file(path: impl AsRef<Path>) -> anyhow::Result<Vec<E
 // --------------------------------------------------------------------
 
 pub fn day1() -> anyhow::Result<()> {
-    let elves = load_elves_calories_from_file("data/day1.txt")?;
+    let mut elves = load_elves_calories_from_file("data/day1.txt")?;
 
-    let mut sorted_elves = elves;
-    sorted_elves.sort_by_key(|e| e.total_calories());
+    elves.sort_by_key(|e| Reverse(e.total_calories()));
 
-    let max_elve = sorted_elves
-        .last()
+    let max_elve = elves
+        .first()
         .ok_or_else(|| anyhow::anyhow!("No elves found"))?;
 
     println!("Day 1.1: {}", max_elve.total_calories());
 
-    let max_3_elves = sorted_elves.iter().rev().take(3).collect::<Vec<_>>();
-
-    let max_3_calories = max_3_elves.iter().map(|e| e.total_calories());
-    let max_3_elves_calories: Calories = max_3_calories.sum();
+    let max_3_elves_calories: Calories = elves.iter().take(3).map(|e| e.total_calories()).sum();
 
     println!("Day 1.2: {}", max_3_elves_calories);
 
