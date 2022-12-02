@@ -214,11 +214,6 @@ pub fn day2() -> anyhow::Result<()> {
         let total_score = scores.iter().sum::<i32>();
 
         println!("Day 2.2: {}", total_score);
-        // let scores = lines.iter().map(|line| line.score()).collect::<Vec<_>>();
-
-        // let total_score = scores.iter().sum::<i32>();
-
-        // println!("Day 2.1: {}", total_score);
     }
 
     Ok(())
