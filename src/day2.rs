@@ -244,7 +244,6 @@ mod tests {
         )
         .unwrap();
 
-        println!("{:?}", lines);
         assert_eq!(lines.len(), 3);
         assert_eq!(lines[0].score(), 8);
         assert_eq!(lines[1].score(), 1);
@@ -263,7 +262,6 @@ mod tests {
         )
         .unwrap();
 
-        println!("{:?}", lines);
         assert_eq!(lines.len(), 3);
         assert_eq!(lines[0].score(), 4);
         assert_eq!(lines[1].score(), 1);
