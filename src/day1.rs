@@ -1,14 +1,16 @@
+use eyre::eyre;
 use std::{
     cmp::Reverse,
     fmt::{self, Display, Formatter},
     fs::File,
-    io::{BufRead, BufReader},
+    io::{self, BufRead, BufReader},
     iter::Sum,
     num::ParseIntError,
     ops::{Add, Sub},
     path::Path,
     str::FromStr,
 };
+use thiserror::Error;
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
 struct Calories(i32);
@@ -73,16 +75,25 @@ impl Elf {
     }
 }
 
-fn load_elves_calories_from_reader(reader: impl BufRead) -> anyhow::Result<Vec<Elf>> {
+#[derive(Error, Debug)]
+pub enum LoadError {
+    #[error("Failed to parse number")]
+    FailedToParse(#[from] ParseIntError),
+
+    #[error("Failed to read line")]
+    LineReadError(#[from] io::Error),
+}
+
+fn load_elves_calories_from_reader(reader: impl BufRead) -> Result<Vec<Elf>, LoadError> {
     let mut elves = Vec::<Elf>::new();
     let mut current_calories = Vec::<Calories>::new();
 
     for line in reader.lines() {
         let line = line?;
-        if line.is_empty() {
+        if line.trim().is_empty() {
             if !current_calories.is_empty() {
                 elves.push(Elf::new(current_calories));
-                current_calories = Default::default();
+                current_calories = Vec::default();
             }
         } else {
             current_calories.push(line.parse()?);
@@ -96,7 +107,7 @@ fn load_elves_calories_from_reader(reader: impl BufRead) -> anyhow::Result<Vec<E
     Ok(elves)
 }
 
-fn load_elves_calories_from_file(path: impl AsRef<Path>) -> anyhow::Result<Vec<Elf>> {
+fn load_elves_calories_from_file(path: impl AsRef<Path>) -> Result<Vec<Elf>, LoadError> {
     let file = File::open(path)?;
     let reader = BufReader::new(file);
     load_elves_calories_from_reader(reader)
@@ -104,18 +115,16 @@ fn load_elves_calories_from_file(path: impl AsRef<Path>) -> anyhow::Result<Vec<E
 
 // --------------------------------------------------------------------
 
-pub fn day1() -> anyhow::Result<()> {
+pub fn day1() -> eyre::Result<()> {
     let mut elves = load_elves_calories_from_file("data/day1.txt")?;
 
     elves.sort_by_key(|e| Reverse(e.total_calories()));
 
-    let max_elve = elves
-        .first()
-        .ok_or_else(|| anyhow::anyhow!("No elves found"))?;
+    let max_elve = elves.first().ok_or_else(|| eyre!("No elves found"))?;
 
     println!("Day 1.1: {}", max_elve.total_calories());
 
-    let max_3_elves_calories: Calories = elves.iter().take(3).map(|e| e.total_calories()).sum();
+    let max_3_elves_calories: Calories = elves.iter().take(3).map(Elf::total_calories).sum();
 
     println!("Day 1.2: {}", max_3_elves_calories);
 
@@ -130,7 +139,7 @@ mod tests {
 
     use super::*;
 
-    fn load_elves_calories_from_string(s: impl AsRef<str>) -> anyhow::Result<Vec<Elf>> {
+    fn load_elves_calories_from_string(s: impl AsRef<str>) -> Result<Vec<Elf>, LoadError> {
         let reader = Cursor::new(s.as_ref());
         load_elves_calories_from_reader(reader)
     }

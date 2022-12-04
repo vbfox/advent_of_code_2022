@@ -1,4 +1,4 @@
-use anyhow::anyhow;
+use eyre::eyre;
 use std::str::FromStr;
 use std::{
     fs::File,
@@ -20,16 +20,16 @@ impl Item {
 }
 
 impl FromStr for Item {
-    type Err = anyhow::Error;
+    type Err = eyre::Report;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         if s.len() > 1 {
-            return Err(anyhow!("Invalid Item value: {}", s));
+            return Err(eyre!("Invalid Item value: {}", s));
         }
 
         match s.chars().next() {
             Some(c @ 'A'..='Z') | Some(c @ 'a'..='z') => Ok(Item(c)),
-            _ => Err(anyhow!("Invalid Item value: {}", s)),
+            _ => Err(eyre!("Invalid Item value: {}", s)),
         }
     }
 }
@@ -40,7 +40,7 @@ struct Compartment {
 }
 
 impl FromStr for Compartment {
-    type Err = anyhow::Error;
+    type Err = eyre::Report;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let items = s
@@ -56,7 +56,7 @@ impl FromStr for Compartment {
 struct RuckSack(Compartment, Compartment);
 
 impl RuckSack {
-    pub fn find_duplicate(&self) -> anyhow::Result<Item> {
+    pub fn find_duplicate(&self) -> eyre::Result<Item> {
         for item0 in &self.0.items {
             for item1 in &self.1.items {
                 if item0 == item1 {
@@ -65,10 +65,10 @@ impl RuckSack {
             }
         }
 
-        return Err(anyhow!("No duplicate found"));
+        return Err(eyre!("No duplicate found"));
     }
 
-    pub fn priority(&self) -> anyhow::Result<u32> {
+    pub fn priority(&self) -> eyre::Result<u32> {
         let duplicate = self.find_duplicate()?;
         Ok(duplicate.priority())
     }
@@ -81,11 +81,11 @@ impl RuckSack {
 }
 
 impl FromStr for RuckSack {
-    type Err = anyhow::Error;
+    type Err = eyre::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         if s.len() % 2 != 0 {
-            return Err(anyhow!("Invalid RuckSack length {}: {}", s.len(), s));
+            return Err(eyre!("Invalid RuckSack length {}: {}", s.len(), s));
         }
 
         let (a, b) = s.split_at(s.len() / 2);
@@ -96,7 +96,7 @@ impl FromStr for RuckSack {
 struct Group(RuckSack, RuckSack, RuckSack);
 
 impl Group {
-    pub fn find_badge(&self) -> anyhow::Result<Item> {
+    pub fn find_badge(&self) -> eyre::Result<Item> {
         let items0 = self.0.all_items();
         let items1 = self.1.all_items();
         let items2 = self.2.all_items();
@@ -113,18 +113,18 @@ impl Group {
             }
         }
 
-        return Err(anyhow!("No badge found"));
+        return Err(eyre!("No badge found"));
     }
 
-    pub fn priority(&self) -> anyhow::Result<u32> {
+    pub fn priority(&self) -> eyre::Result<u32> {
         let badge = self.find_badge()?;
         Ok(badge.priority())
     }
 }
 
-fn get_groups(vec: &Vec<RuckSack>) -> anyhow::Result<Vec<Group>> {
+fn get_groups(vec: &Vec<RuckSack>) -> eyre::Result<Vec<Group>> {
     if vec.len() % 3 != 0 {
-        return Err(anyhow!("Invalid RuckSacks length: {}", vec.len()));
+        return Err(eyre!("Invalid RuckSacks length: {}", vec.len()));
     }
 
     let mut groups = Vec::new();
@@ -138,16 +138,16 @@ fn get_groups(vec: &Vec<RuckSack>) -> anyhow::Result<Vec<Group>> {
     Ok(groups)
 }
 
-fn load_from_reader(reader: impl BufRead) -> anyhow::Result<Vec<RuckSack>> {
+fn load_from_reader(reader: impl BufRead) -> eyre::Result<Vec<RuckSack>> {
     reader.lines().map(|line| line?.parse()).collect()
 }
 
-fn load_from_file(path: impl AsRef<Path>) -> anyhow::Result<Vec<RuckSack>> {
+fn load_from_file(path: impl AsRef<Path>) -> eyre::Result<Vec<RuckSack>> {
     let file = File::open(path)?;
     load_from_reader(BufReader::new(file))
 }
 
-pub fn day3() -> anyhow::Result<()> {
+pub fn day3() -> eyre::Result<()> {
     let rucksacks = load_from_file("data/day3.txt")?;
 
     {
@@ -177,7 +177,7 @@ mod tests {
 
     use super::*;
 
-    fn load_from_string(s: impl AsRef<str>) -> anyhow::Result<Vec<RuckSack>> {
+    fn load_from_string(s: impl AsRef<str>) -> eyre::Result<Vec<RuckSack>> {
         let reader = Cursor::new(s.as_ref());
         load_from_reader(reader)
     }
