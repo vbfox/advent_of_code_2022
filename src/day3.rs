@@ -10,7 +10,7 @@ use std::{
 struct Item(char);
 
 impl Item {
-    fn priority(&self) -> u32 {
+    fn priority(self) -> u32 {
         match self.0 {
             c @ 'a'..='z' => c as u32 - 'a' as u32 + 1,
             c @ 'A'..='Z' => c as u32 - 'A' as u32 + 27,
@@ -28,7 +28,7 @@ impl FromStr for Item {
         }
 
         match s.chars().next() {
-            Some(c @ 'A'..='Z') | Some(c @ 'a'..='z') => Ok(Item(c)),
+            Some(c @ ('A'..='Z' | 'a'..='z')) => Ok(Item(c)),
             _ => Err(eyre!("Invalid Item value: {}", s)),
         }
     }
@@ -65,7 +65,7 @@ impl RuckSack {
             }
         }
 
-        return Err(eyre!("No duplicate found"));
+        Err(eyre!("No duplicate found"))
     }
 
     pub fn priority(&self) -> eyre::Result<u32> {
@@ -113,7 +113,7 @@ impl Group {
             }
         }
 
-        return Err(eyre!("No badge found"));
+        Err(eyre!("No badge found"))
     }
 
     pub fn priority(&self) -> eyre::Result<u32> {
@@ -153,7 +153,7 @@ pub fn day3() -> eyre::Result<()> {
     {
         let priorities = rucksacks
             .iter()
-            .map(|line| line.priority())
+            .map(RuckSack::priority)
             .collect::<Result<Vec<_>, _>>()?;
         let total = priorities.iter().sum::<u32>();
         println!("Day 3.1: {}", total);
@@ -163,7 +163,7 @@ pub fn day3() -> eyre::Result<()> {
 
         let priorities = groups
             .iter()
-            .map(|line| line.priority())
+            .map(Group::priority)
             .collect::<Result<Vec<_>, _>>()?;
         let total = priorities.iter().sum::<u32>();
         println!("Day 3.2: {}", total);
