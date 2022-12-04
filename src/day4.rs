@@ -82,11 +82,10 @@ impl FromStr for Pair {
         let mut parts = s.split(',');
 
         match (parts.next(), parts.next(), parts.next()) {
-            (Some(first), Some(second), None) => {
-                let first: SectionRange = first.parse()?;
-                let second: SectionRange = second.parse()?;
-                Ok(Self { first, second })
-            }
+            (Some(first), Some(second), None) => Ok(Self {
+                first: first.parse()?,
+                second: second.parse()?,
+            }),
             _ => Err(anyhow!("Not a pair: {}", s)),
         }
     }
