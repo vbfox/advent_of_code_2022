@@ -1,4 +1,5 @@
-use crate::utils::CharSliceExt;
+use crate::utils::SingleExt;
+use crate::utils::{find_common_items, CharSliceExt};
 use eyre::eyre;
 use std::fmt::{self, Display, Formatter};
 use std::io;
@@ -168,23 +169,9 @@ pub enum BadgePriorityError {
 
 impl Group {
     pub fn find_badge(&self) -> Option<Item> {
-        let items0 = self.0.all_items();
-        let items1 = self.1.all_items();
-        let items2 = self.2.all_items();
-
-        for item0 in &items0 {
-            for item1 in &items1 {
-                if *item0 == *item1 {
-                    for item2 in &items2 {
-                        if *item0 == *item2 {
-                            return Some(*item0);
-                        }
-                    }
-                }
-            }
-        }
-
-        None
+        let slices = vec![self.0.all_items(), self.1.all_items(), self.2.all_items()];
+        let common_items = find_common_items(&slices);
+        common_items.into_iter().single().cloned()
     }
 
     pub fn priority(&self) -> Result<u32, BadgePriorityError> {
@@ -197,7 +184,7 @@ impl Group {
 
 impl Display for Group {
     fn fmt(&self, f: &mut Formatter) -> Result<(), fmt::Error> {
-        write!(f, "{} {} {}", self.0, self.1, self.2)
+        write!(f, "{}\n{}\n{}", self.0, self.1, self.2)
     }
 }
 
