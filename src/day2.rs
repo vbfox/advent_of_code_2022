@@ -25,6 +25,7 @@ impl Player1 {
 }
 
 #[derive(Error, Debug)]
+#[allow(clippy::enum_variant_names)]
 pub enum MoveFromStrError {
     #[error("Unknown move for player 1: '{0}'")]
     UnknownPlayer1Move(String),
