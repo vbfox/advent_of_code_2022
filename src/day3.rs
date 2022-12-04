@@ -1,3 +1,4 @@
+use crate::utils::CharSliceExt;
 use eyre::eyre;
 use std::fmt::{self, Display, Formatter};
 use std::io;
@@ -35,13 +36,24 @@ pub enum ItemParseError {
     InvalidValue(String),
 }
 
+impl TryFrom<char> for Item {
+    type Error = ItemParseError;
+
+    fn try_from(c: char) -> Result<Self, Self::Error> {
+        match c {
+            c @ ('A'..='Z' | 'a'..='z') => Ok(Item(c)),
+            _ => Err(ItemParseError::InvalidValue(c.to_string())),
+        }
+    }
+}
+
 impl FromStr for Item {
     type Err = ItemParseError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut chars = s.chars();
         match (chars.next(), chars.next()) {
-            (Some(c @ ('A'..='Z' | 'a'..='z')), None) => Ok(Item(c)),
+            (Some(c), None) => Ok(c.try_into()?),
             _ => Err(ItemParseError::InvalidValue(s.to_string())),
         }
     }
@@ -66,8 +78,8 @@ impl FromStr for Compartment {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let items = s
-            .chars()
-            .map(|c| c.to_string().parse())
+            .char_slices()
+            .map(|c| c.parse())
             .collect::<Result<Vec<_>, _>>()?;
 
         Ok(Compartment { items })
