@@ -2,13 +2,15 @@ use std::{
     cmp::Reverse,
     fmt::{self, Display, Formatter},
     fs::File,
-    io::{BufRead, BufReader},
+    io::{self, BufRead, BufReader},
     iter::Sum,
     num::ParseIntError,
     ops::{Add, Sub},
     path::Path,
     str::FromStr,
 };
+
+use thiserror::Error;
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
 struct Calories(i32);
@@ -73,7 +75,16 @@ impl Elf {
     }
 }
 
-fn load_elves_calories_from_reader(reader: impl BufRead) -> anyhow::Result<Vec<Elf>> {
+#[derive(Error, Debug)]
+pub enum LoadError {
+    #[error("Failed to parse number")]
+    FailedToParse(#[from] ParseIntError),
+
+    #[error("Failed to read line")]
+    LineReadError(#[from] io::Error),
+}
+
+fn load_elves_calories_from_reader(reader: impl BufRead) -> Result<Vec<Elf>, LoadError> {
     let mut elves = Vec::<Elf>::new();
     let mut current_calories = Vec::<Calories>::new();
 
@@ -96,7 +107,7 @@ fn load_elves_calories_from_reader(reader: impl BufRead) -> anyhow::Result<Vec<E
     Ok(elves)
 }
 
-fn load_elves_calories_from_file(path: impl AsRef<Path>) -> anyhow::Result<Vec<Elf>> {
+fn load_elves_calories_from_file(path: impl AsRef<Path>) -> Result<Vec<Elf>, LoadError> {
     let file = File::open(path)?;
     let reader = BufReader::new(file);
     load_elves_calories_from_reader(reader)
@@ -130,7 +141,7 @@ mod tests {
 
     use super::*;
 
-    fn load_elves_calories_from_string(s: impl AsRef<str>) -> anyhow::Result<Vec<Elf>> {
+    fn load_elves_calories_from_string(s: impl AsRef<str>) -> Result<Vec<Elf>, LoadError> {
         let reader = Cursor::new(s.as_ref());
         load_elves_calories_from_reader(reader)
     }
