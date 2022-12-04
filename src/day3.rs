@@ -1,10 +1,13 @@
 use eyre::eyre;
+use std::fmt::{self, Display, Formatter};
+use std::io;
 use std::str::FromStr;
 use std::{
     fs::File,
     io::{BufRead, BufReader},
     path::Path,
 };
+use thiserror::Error;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 struct Item(char);
@@ -19,17 +22,27 @@ impl Item {
     }
 }
 
+impl Display for Item {
+    fn fmt(&self, f: &mut Formatter) -> Result<(), fmt::Error> {
+        write!(f, "{}", self.0)
+    }
+}
+
+#[derive(Error, Debug)]
+#[allow(clippy::enum_variant_names)]
+pub enum ItemParseError {
+    #[error("Invalid item value: '{0}'")]
+    InvalidValue(String),
+}
+
 impl FromStr for Item {
-    type Err = eyre::Report;
+    type Err = ItemParseError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if s.len() > 1 {
-            return Err(eyre!("Invalid Item value: {}", s));
-        }
-
-        match s.chars().next() {
-            Some(c @ ('A'..='Z' | 'a'..='z')) => Ok(Item(c)),
-            _ => Err(eyre!("Invalid Item value: {}", s)),
+        let mut chars = s.chars();
+        match (chars.next(), chars.next()) {
+            (Some(c @ ('A'..='Z' | 'a'..='z')), None) => Ok(Item(c)),
+            _ => Err(ItemParseError::InvalidValue(s.to_string())),
         }
     }
 }
@@ -39,8 +52,17 @@ struct Compartment {
     items: Vec<Item>,
 }
 
+impl Display for Compartment {
+    fn fmt(&self, f: &mut Formatter) -> Result<(), fmt::Error> {
+        for item in &self.items {
+            write!(f, "{}", item)?;
+        }
+        Ok(())
+    }
+}
+
 impl FromStr for Compartment {
-    type Err = eyre::Report;
+    type Err = ItemParseError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let items = s
@@ -55,21 +77,36 @@ impl FromStr for Compartment {
 #[derive(Debug, Clone)]
 struct RuckSack(Compartment, Compartment);
 
+impl Display for RuckSack {
+    fn fmt(&self, f: &mut Formatter) -> Result<(), fmt::Error> {
+        write!(f, "{} {}", self.0, self.1)
+    }
+}
+
+#[derive(Error, Debug)]
+#[allow(clippy::enum_variant_names)]
+pub enum PriorityError {
+    #[error("No duplicate found for priority: '{0}'")]
+    NoDuplicateFound(String),
+}
+
 impl RuckSack {
-    pub fn find_duplicate(&self) -> eyre::Result<Item> {
+    pub fn find_duplicate(&self) -> Option<Item> {
         for item0 in &self.0.items {
             for item1 in &self.1.items {
                 if item0 == item1 {
-                    return Ok(*item0);
+                    return Some(*item0);
                 }
             }
         }
 
-        Err(eyre!("No duplicate found"))
+        None
     }
 
     pub fn priority(&self) -> eyre::Result<u32> {
-        let duplicate = self.find_duplicate()?;
+        let duplicate = self
+            .find_duplicate()
+            .ok_or_else(|| PriorityError::NoDuplicateFound(self.to_string()))?;
         Ok(duplicate.priority())
     }
 
@@ -80,23 +117,45 @@ impl RuckSack {
     }
 }
 
+#[derive(Error, Debug)]
+#[allow(clippy::enum_variant_names)]
+pub enum RuckSackParseError {
+    #[error("Invalid input length {1} in '{0}'")]
+    InvalidLength(String, usize),
+    #[error("Unable to parse compartment {1}: '{0}'")]
+    CompartmentParseError(#[source] ItemParseError, usize),
+}
+
 impl FromStr for RuckSack {
-    type Err = eyre::Error;
+    type Err = RuckSackParseError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         if s.len() % 2 != 0 {
-            return Err(eyre!("Invalid RuckSack length {}: {}", s.len(), s));
+            return Err(RuckSackParseError::InvalidLength(s.to_string(), s.len()));
         }
 
-        let (a, b) = s.split_at(s.len() / 2);
-        Ok(RuckSack(a.parse()?, b.parse()?))
+        let (compartment1, compartment2) = s.split_at(s.len() / 2);
+        let compartment1 = compartment1
+            .parse()
+            .map_err(|e| RuckSackParseError::CompartmentParseError(e, 1))?;
+        let compartment2 = compartment2
+            .parse()
+            .map_err(|e| RuckSackParseError::CompartmentParseError(e, 2))?;
+        Ok(RuckSack(compartment1, compartment2))
     }
 }
 
 struct Group(RuckSack, RuckSack, RuckSack);
 
+#[derive(Error, Debug)]
+#[allow(clippy::enum_variant_names)]
+pub enum BadgePriorityError {
+    #[error("No badge found for priority: '{0}'")]
+    NoDuplicateFound(String),
+}
+
 impl Group {
-    pub fn find_badge(&self) -> eyre::Result<Item> {
+    pub fn find_badge(&self) -> Option<Item> {
         let items0 = self.0.all_items();
         let items1 = self.1.all_items();
         let items2 = self.2.all_items();
@@ -106,19 +165,27 @@ impl Group {
                 if *item0 == *item1 {
                     for item2 in &items2 {
                         if *item0 == *item2 {
-                            return Ok(*item0);
+                            return Some(*item0);
                         }
                     }
                 }
             }
         }
 
-        Err(eyre!("No badge found"))
+        None
     }
 
-    pub fn priority(&self) -> eyre::Result<u32> {
-        let badge = self.find_badge()?;
+    pub fn priority(&self) -> Result<u32, BadgePriorityError> {
+        let badge = self
+            .find_badge()
+            .ok_or_else(|| BadgePriorityError::NoDuplicateFound(self.to_string()))?;
         Ok(badge.priority())
+    }
+}
+
+impl Display for Group {
+    fn fmt(&self, f: &mut Formatter) -> Result<(), fmt::Error> {
+        write!(f, "{} {} {}", self.0, self.1, self.2)
     }
 }
 
@@ -138,11 +205,20 @@ fn get_groups(vec: &Vec<RuckSack>) -> eyre::Result<Vec<Group>> {
     Ok(groups)
 }
 
-fn load_from_reader(reader: impl BufRead) -> eyre::Result<Vec<RuckSack>> {
-    reader.lines().map(|line| line?.parse()).collect()
+#[derive(Error, Debug)]
+#[allow(clippy::enum_variant_names)]
+pub enum LoadError {
+    #[error("Unable to parse RuckSack")]
+    RuckSackParseError(#[from] RuckSackParseError),
+    #[error("Unable to read line")]
+    LineReadError(#[from] io::Error),
 }
 
-fn load_from_file(path: impl AsRef<Path>) -> eyre::Result<Vec<RuckSack>> {
+fn load_from_reader(reader: impl BufRead) -> Result<Vec<RuckSack>, LoadError> {
+    reader.lines().map(|line| Ok(line?.parse()?)).collect()
+}
+
+fn load_from_file(path: impl AsRef<Path>) -> Result<Vec<RuckSack>, LoadError> {
     let file = File::open(path)?;
     load_from_reader(BufReader::new(file))
 }
@@ -177,7 +253,7 @@ mod tests {
 
     use super::*;
 
-    fn load_from_string(s: impl AsRef<str>) -> eyre::Result<Vec<RuckSack>> {
+    fn load_from_string(s: impl AsRef<str>) -> Result<Vec<RuckSack>, LoadError> {
         let reader = Cursor::new(s.as_ref());
         load_from_reader(reader)
     }
