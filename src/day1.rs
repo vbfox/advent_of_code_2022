@@ -115,7 +115,7 @@ pub fn day1() -> anyhow::Result<()> {
 
     println!("Day 1.1: {}", max_elve.total_calories());
 
-    let max_3_elves_calories: Calories = elves.iter().take(3).map(|e| e.total_calories()).sum();
+    let max_3_elves_calories: Calories = elves.iter().take(3).map(Elf::total_calories).sum();
 
     println!("Day 1.2: {}", max_3_elves_calories);
 

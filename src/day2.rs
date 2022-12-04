@@ -202,7 +202,7 @@ fn load_from_file_v2(path: impl AsRef<Path>) -> anyhow::Result<Vec<StrategyLineV
 pub fn day2() -> anyhow::Result<()> {
     {
         let lines = load_from_file("data/day2.txt")?;
-        let scores = lines.iter().map(|line| line.score()).collect::<Vec<_>>();
+        let scores = lines.iter().map(StrategyLine::score).collect::<Vec<_>>();
         let total_score = scores.iter().sum::<i32>();
 
         println!("Day 2.1: {}", total_score);
