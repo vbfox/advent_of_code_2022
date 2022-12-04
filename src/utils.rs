@@ -66,7 +66,7 @@ mod single_tests {
 
 // --------------------------------------------------------------------------
 
-pub fn find_common_items<'a, T: Eq>(items: &'a Vec<Vec<T>>) -> Vec<&'a T> {
+pub fn find_common_items<'a, T: Eq>(items: &'a [Vec<T>]) -> Vec<&'a T> {
     let mut common_items: Vec<&'a T> = Vec::new();
 
     for item in &items[0] {

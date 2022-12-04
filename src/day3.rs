@@ -80,7 +80,7 @@ impl FromStr for Compartment {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let items = s
             .char_slices()
-            .map(|c| c.parse())
+            .map(str::parse)
             .collect::<Result<Vec<_>, _>>()?;
 
         Ok(Compartment { items })
@@ -171,7 +171,7 @@ impl Group {
     pub fn find_badge(&self) -> Option<Item> {
         let slices = vec![self.0.all_items(), self.1.all_items(), self.2.all_items()];
         let common_items = find_common_items(&slices);
-        common_items.into_iter().single().cloned()
+        common_items.into_iter().single().copied()
     }
 
     pub fn priority(&self) -> Result<u32, BadgePriorityError> {
