@@ -1,3 +1,4 @@
+use eyre::eyre;
 use std::{
     cmp::Reverse,
     fmt::{self, Display, Formatter},
@@ -9,7 +10,6 @@ use std::{
     path::Path,
     str::FromStr,
 };
-
 use thiserror::Error;
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
@@ -90,7 +90,7 @@ fn load_elves_calories_from_reader(reader: impl BufRead) -> Result<Vec<Elf>, Loa
 
     for line in reader.lines() {
         let line = line?;
-        if line.is_empty() {
+        if line.trim().is_empty() {
             if !current_calories.is_empty() {
                 elves.push(Elf::new(current_calories));
                 current_calories = Vec::default();
@@ -115,14 +115,12 @@ fn load_elves_calories_from_file(path: impl AsRef<Path>) -> Result<Vec<Elf>, Loa
 
 // --------------------------------------------------------------------
 
-pub fn day1() -> anyhow::Result<()> {
+pub fn day1() -> eyre::Result<()> {
     let mut elves = load_elves_calories_from_file("data/day1.txt")?;
 
     elves.sort_by_key(|e| Reverse(e.total_calories()));
 
-    let max_elve = elves
-        .first()
-        .ok_or_else(|| anyhow::anyhow!("No elves found"))?;
+    let max_elve = elves.first().ok_or_else(|| eyre!("No elves found"))?;
 
     println!("Day 1.1: {}", max_elve.total_calories());
 

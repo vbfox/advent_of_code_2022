@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Error as AnyError, Result as AnyResult};
+use eyre::eyre;
 use std::{
     fmt::{self, Display, Formatter},
     fs::File,
@@ -43,7 +43,7 @@ impl SectionRange {
 }
 
 impl FromStr for SectionRange {
-    type Err = AnyError;
+    type Err = eyre::Report;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut parts = s.split('-');
@@ -54,7 +54,7 @@ impl FromStr for SectionRange {
                 let to: Section = to.parse()?;
                 Ok(Self(from..=to))
             }
-            _ => Err(anyhow!("Not a range: {}", s)),
+            _ => Err(eyre!("Not a range: {}", s)),
         }
     }
 }
@@ -76,7 +76,7 @@ impl Pair {
 }
 
 impl FromStr for Pair {
-    type Err = AnyError;
+    type Err = eyre::Report;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut parts = s.split(',');
@@ -86,21 +86,21 @@ impl FromStr for Pair {
                 first: first.parse()?,
                 second: second.parse()?,
             }),
-            _ => Err(anyhow!("Not a pair: {}", s)),
+            _ => Err(eyre!("Not a pair: {}", s)),
         }
     }
 }
 
-fn load_from_reader(reader: impl BufRead) -> AnyResult<Vec<Pair>> {
+fn load_from_reader(reader: impl BufRead) -> eyre::Result<Vec<Pair>> {
     reader.lines().map(|line| line?.parse()).collect()
 }
 
-fn load_from_file(path: impl AsRef<Path>) -> AnyResult<Vec<Pair>> {
+fn load_from_file(path: impl AsRef<Path>) -> eyre::Result<Vec<Pair>> {
     let file = File::open(path)?;
     load_from_reader(BufReader::new(file))
 }
 
-pub fn day4() -> AnyResult<()> {
+pub fn day4() -> eyre::Result<()> {
     let lines = load_from_file("data/day4.txt")?;
 
     {
@@ -131,7 +131,7 @@ mod tests {
 2-6,4-8
 "#;
 
-    fn load_from_string(s: impl AsRef<str>) -> AnyResult<Vec<Pair>> {
+    fn load_from_string(s: impl AsRef<str>) -> eyre::Result<Vec<Pair>> {
         let reader = Cursor::new(s.as_ref());
         load_from_reader(reader)
     }

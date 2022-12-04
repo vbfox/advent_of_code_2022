@@ -1,20 +1,23 @@
 #![warn(clippy::all, clippy::pedantic)]
 
-use anyhow::Result as AnyResult;
+use color_eyre::eyre::Result;
 
 mod day1;
 mod day2;
 mod day4;
 
 #[allow(dead_code)]
-fn previous_days() -> AnyResult<()> {
+fn previous_days() -> Result<()> {
     day1::day1()?;
     day2::day2()?;
 
     Ok(())
 }
 
-fn main() -> AnyResult<()> {
+fn main() -> Result<()> {
+    color_eyre::install()?;
+
+    previous_days()?;
     day4::day4()?;
 
     Ok(())

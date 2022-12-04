@@ -1,10 +1,11 @@
-use anyhow::anyhow;
+use std::io;
 use std::str::FromStr;
 use std::{
     fs::File,
     io::{BufRead, BufReader},
     path::Path,
 };
+use thiserror::Error;
 
 #[derive(Debug)]
 enum Player1 {
@@ -23,15 +24,25 @@ impl Player1 {
     }
 }
 
+#[derive(Error, Debug)]
+pub enum MoveFromStrError {
+    #[error("Unknown move for player 1: '{0}'")]
+    UnknownPlayer1Move(String),
+    #[error("Unknown move for player 2: '{0}'")]
+    UnknownPlayer2Move(String),
+    #[error("Unknown winning move: '{0}'")]
+    UnknownWinnerMove(String),
+}
+
 impl FromStr for Player1 {
-    type Err = anyhow::Error;
+    type Err = MoveFromStrError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "X" => Ok(Player1::Rock),
             "Y" => Ok(Player1::Paper),
             "Z" => Ok(Player1::Scissors),
-            _ => Err(anyhow!("Invalid Player1 value: {}", s)),
+            _ => Err(MoveFromStrError::UnknownPlayer1Move(s.to_string())),
         }
     }
 }
@@ -44,14 +55,14 @@ enum Player2 {
 }
 
 impl FromStr for Player2 {
-    type Err = anyhow::Error;
+    type Err = MoveFromStrError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "A" => Ok(Player2::Rock),
             "B" => Ok(Player2::Paper),
             "C" => Ok(Player2::Scissors),
-            _ => Err(anyhow!("Invalid Player1 value: {}", s)),
+            _ => Err(MoveFromStrError::UnknownPlayer2Move(s.to_string())),
         }
     }
 }
@@ -74,14 +85,14 @@ impl Winner {
 }
 
 impl FromStr for Winner {
-    type Err = anyhow::Error;
+    type Err = MoveFromStrError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "X" => Ok(Winner::Player2),
             "Y" => Ok(Winner::Draw),
             "Z" => Ok(Winner::Player1),
-            _ => Err(anyhow!("Invalid Winner value: {}", s)),
+            _ => Err(MoveFromStrError::UnknownWinnerMove(s.to_string())),
         }
     }
 }
@@ -115,20 +126,42 @@ impl StrategyLine {
     }
 }
 
+#[derive(Error, Debug)]
+pub enum LineFromStrError {
+    #[error("Invalid line format: {0}")]
+    InvalidLine(String),
+    #[error("Unable to parse move on line '{line}': {source}")]
+    UnableToParseMove {
+        line: String,
+        source: MoveFromStrError,
+    },
+    #[error("Unable to read line")]
+    UnableToRead(#[from] io::Error),
+}
+
 impl FromStr for StrategyLine {
-    type Err = anyhow::Error;
+    type Err = LineFromStrError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut iter = s.split_whitespace();
-        let player2 = iter
-            .next()
-            .ok_or_else(|| anyhow!("Can't read player1 value"))?
-            .parse()?;
-        let player1 = iter
-            .next()
-            .ok_or_else(|| anyhow!("Can't read player2 value"))?
-            .parse()?;
-        Ok(StrategyLine { player1, player2 })
+
+        match (iter.next(), iter.next(), iter.next()) {
+            (Some(player2), Some(player1), None) => Ok(StrategyLine {
+                player1: player1
+                    .parse()
+                    .map_err(|source| LineFromStrError::UnableToParseMove {
+                        line: s.to_string(),
+                        source,
+                    })?,
+                player2: player2
+                    .parse()
+                    .map_err(|source| LineFromStrError::UnableToParseMove {
+                        line: s.to_string(),
+                        source,
+                    })?,
+            }),
+            _ => Err(LineFromStrError::InvalidLine(s.to_string())),
+        }
     }
 }
 
@@ -162,44 +195,49 @@ impl StrategyLineV2 {
 }
 
 impl FromStr for StrategyLineV2 {
-    type Err = anyhow::Error;
+    type Err = LineFromStrError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut iter = s.split_whitespace();
-        let player2 = iter
-            .next()
-            .ok_or_else(|| anyhow!("Can't read player1 value"))?
-            .parse()?;
-        let expected_end = iter
-            .next()
-            .ok_or_else(|| anyhow!("Can't read expected_end value"))?
-            .parse()?;
-        Ok(StrategyLineV2 {
-            expected_end,
-            player2,
-        })
+        match (iter.next(), iter.next(), iter.next()) {
+            (Some(player2), Some(expected_end), None) => Ok(StrategyLineV2 {
+                expected_end: expected_end.parse().map_err(|source| {
+                    LineFromStrError::UnableToParseMove {
+                        line: s.to_string(),
+                        source,
+                    }
+                })?,
+                player2: player2
+                    .parse()
+                    .map_err(|source| LineFromStrError::UnableToParseMove {
+                        line: s.to_string(),
+                        source,
+                    })?,
+            }),
+            _ => Err(LineFromStrError::InvalidLine(s.to_string())),
+        }
     }
 }
 
-fn load_from_reader(reader: impl BufRead) -> anyhow::Result<Vec<StrategyLine>> {
+fn load_from_reader(reader: impl BufRead) -> Result<Vec<StrategyLine>, LineFromStrError> {
     reader.lines().map(|line| line?.parse()).collect()
 }
 
-fn load_from_file(path: impl AsRef<Path>) -> anyhow::Result<Vec<StrategyLine>> {
+fn load_from_file(path: impl AsRef<Path>) -> Result<Vec<StrategyLine>, LineFromStrError> {
     let file = File::open(path)?;
     load_from_reader(BufReader::new(file))
 }
 
-fn load_from_reader_v2(reader: impl BufRead) -> anyhow::Result<Vec<StrategyLineV2>> {
+fn load_from_reader_v2(reader: impl BufRead) -> Result<Vec<StrategyLineV2>, LineFromStrError> {
     reader.lines().map(|line| line?.parse()).collect()
 }
 
-fn load_from_file_v2(path: impl AsRef<Path>) -> anyhow::Result<Vec<StrategyLineV2>> {
+fn load_from_file_v2(path: impl AsRef<Path>) -> Result<Vec<StrategyLineV2>, LineFromStrError> {
     let file = File::open(path)?;
     load_from_reader_v2(BufReader::new(file))
 }
 
-pub fn day2() -> anyhow::Result<()> {
+pub fn day2() -> eyre::Result<()> {
     {
         let lines = load_from_file("data/day2.txt")?;
         let scores = lines.iter().map(StrategyLine::score).collect::<Vec<_>>();
@@ -225,12 +263,12 @@ mod tests {
 
     use super::*;
 
-    fn load_from_string(s: impl AsRef<str>) -> anyhow::Result<Vec<StrategyLine>> {
+    fn load_from_string(s: impl AsRef<str>) -> Result<Vec<StrategyLine>, LineFromStrError> {
         let reader = Cursor::new(s.as_ref());
         load_from_reader(reader)
     }
 
-    fn load_from_string_v2(s: impl AsRef<str>) -> anyhow::Result<Vec<StrategyLineV2>> {
+    fn load_from_string_v2(s: impl AsRef<str>) -> Result<Vec<StrategyLineV2>, LineFromStrError> {
         let reader = Cursor::new(s.as_ref());
         load_from_reader_v2(reader)
     }
