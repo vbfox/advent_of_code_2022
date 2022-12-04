@@ -82,7 +82,7 @@ fn load_elves_calories_from_reader(reader: impl BufRead) -> anyhow::Result<Vec<E
         if line.is_empty() {
             if !current_calories.is_empty() {
                 elves.push(Elf::new(current_calories));
-                current_calories = Default::default();
+                current_calories = Vec::default();
             }
         } else {
             current_calories.push(line.parse()?);

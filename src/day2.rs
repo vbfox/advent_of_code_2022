@@ -95,15 +95,15 @@ struct StrategyLine {
 impl StrategyLine {
     pub fn winner(&self) -> Winner {
         match (&self.player1, &self.player2) {
-            (Player1::Rock, Player2::Rock) => Winner::Draw,
-            (Player1::Rock, Player2::Paper) => Winner::Player2,
-            (Player1::Rock, Player2::Scissors) => Winner::Player1,
-            (Player1::Paper, Player2::Rock) => Winner::Player1,
-            (Player1::Paper, Player2::Paper) => Winner::Draw,
-            (Player1::Paper, Player2::Scissors) => Winner::Player2,
-            (Player1::Scissors, Player2::Rock) => Winner::Player2,
-            (Player1::Scissors, Player2::Paper) => Winner::Player1,
-            (Player1::Scissors, Player2::Scissors) => Winner::Draw,
+            (Player1::Rock, Player2::Rock)
+            | (Player1::Paper, Player2::Paper)
+            | (Player1::Scissors, Player2::Scissors) => Winner::Draw,
+            (Player1::Rock, Player2::Scissors)
+            | (Player1::Paper, Player2::Rock)
+            | (Player1::Scissors, Player2::Paper) => Winner::Player1,
+            (Player1::Rock, Player2::Paper)
+            | (Player1::Paper, Player2::Scissors)
+            | (Player1::Scissors, Player2::Rock) => Winner::Player2,
         }
     }
 
@@ -141,15 +141,15 @@ struct StrategyLineV2 {
 impl StrategyLineV2 {
     pub fn player1(&self) -> Player1 {
         match (&self.player2, &self.expected_end) {
-            (Player2::Rock, Winner::Player1) => Player1::Paper,
-            (Player2::Rock, Winner::Player2) => Player1::Scissors,
-            (Player2::Rock, Winner::Draw) => Player1::Rock,
-            (Player2::Paper, Winner::Player1) => Player1::Scissors,
-            (Player2::Paper, Winner::Player2) => Player1::Rock,
-            (Player2::Paper, Winner::Draw) => Player1::Paper,
-            (Player2::Scissors, Winner::Player1) => Player1::Rock,
-            (Player2::Scissors, Winner::Player2) => Player1::Paper,
-            (Player2::Scissors, Winner::Draw) => Player1::Scissors,
+            (Player2::Rock, Winner::Player1)
+            | (Player2::Paper, Winner::Draw)
+            | (Player2::Scissors, Winner::Player2) => Player1::Paper,
+            (Player2::Rock, Winner::Player2)
+            | (Player2::Paper, Winner::Player1)
+            | (Player2::Scissors, Winner::Draw) => Player1::Scissors,
+            (Player2::Rock, Winner::Draw)
+            | (Player2::Paper, Winner::Player2)
+            | (Player2::Scissors, Winner::Player1) => Player1::Rock,
         }
     }
 
