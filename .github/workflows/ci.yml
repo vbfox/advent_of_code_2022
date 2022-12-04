@@ -33,8 +33,7 @@ jobs:
   build:
     strategy:
       matrix:
-        rust:
-          - [1.65.0]
+        rust: [1.65.0]
     runs-on: ubuntu-latest
 
     steps:
@@ -53,8 +52,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        rust:
-          - [1.65.0]
+        rust: [1.65.0]
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
