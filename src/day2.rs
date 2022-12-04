@@ -210,7 +210,7 @@ pub fn day2() -> anyhow::Result<()> {
 
     {
         let lines = load_from_file_v2("data/day2.txt")?;
-        let scores = lines.iter().map(|line| line.score()).collect::<Vec<_>>();
+        let scores = lines.iter().map(StrategyLineV2::score).collect::<Vec<_>>();
         let total_score = scores.iter().sum::<i32>();
 
         println!("Day 2.2: {}", total_score);
@@ -250,7 +250,7 @@ mod tests {
         assert_eq!(lines[1].score(), 1);
         assert_eq!(lines[2].score(), 6);
 
-        let total = lines.iter().map(|line| line.score()).sum::<i32>();
+        let total = lines.iter().map(StrategyLine::score).sum::<i32>();
         assert_eq!(total, 15);
     }
 
@@ -269,7 +269,7 @@ mod tests {
         assert_eq!(lines[1].score(), 1);
         assert_eq!(lines[2].score(), 7);
 
-        let total = lines.iter().map(|line| line.score()).sum::<i32>();
+        let total = lines.iter().map(StrategyLineV2::score).sum::<i32>();
         assert_eq!(total, 12);
     }
 }

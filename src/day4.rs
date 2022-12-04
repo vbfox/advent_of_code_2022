@@ -46,7 +46,7 @@ impl FromStr for SectionRange {
     type Err = AnyError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let mut parts = s.split("-");
+        let mut parts = s.split('-');
 
         match (parts.next(), parts.next(), parts.next()) {
             (Some(from), Some(to), None) => {
@@ -79,7 +79,7 @@ impl FromStr for Pair {
     type Err = AnyError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let mut parts = s.split(",");
+        let mut parts = s.split(',');
 
         match (parts.next(), parts.next(), parts.next()) {
             (Some(first), Some(second), None) => {
@@ -118,6 +118,7 @@ pub fn day4() -> AnyResult<()> {
 }
 
 #[cfg(test)]
+#[allow(clippy::bool_assert_comparison)]
 mod tests {
     use std::io::Cursor;
 

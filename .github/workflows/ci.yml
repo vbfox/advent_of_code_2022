@@ -1,0 +1,70 @@
+name: Rust
+
+on:
+  push:
+  pull_request:
+
+env:
+  RUSTFLAGS: '-Dwarnings'
+  CARGO_TERM_COLOR: always
+
+jobs:
+  check:
+    strategy:
+      fail-fast: false
+      matrix:
+        rust: [1.65.0]
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: rust-toolchain
+        uses: actions-rs/toolchain@v1.0.6
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.rust }}
+          override: true
+          components: clippy, rustfmt
+      - name: Check
+        if: ${{ matrix.rust == 'nightly' || matrix.rust == 'stable' }}
+        run: cargo clippy --all-targets --all-features --tests --benches
+      - name: Run tests
+        run: cargo test --verbose
+
+  build:
+    strategy:
+      matrix:
+        rust:
+          - stable
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: rust-toolchain
+        uses: actions-rs/toolchain@v1.0.6
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.rust }}
+          override: true
+      - name: Build
+        run: cargo build --verbose --release
+
+  fmt:
+    name: Rustfmt
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rust:
+          - stable
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.rust }}
+          override: true
+          components: rustfmt
+      - uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --all -- --check
