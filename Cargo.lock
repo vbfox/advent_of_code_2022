@@ -23,6 +23,7 @@ version = "0.1.0"
 dependencies = [
  "color-eyre",
  "eyre",
+ "range_ranger",
  "thiserror",
 ]
 
@@ -147,6 +148,12 @@ checksum = "bbe448f377a7d6961e30f5955f9b8d106c3f5e449d493ee1b125c1d43c2b5179"
 dependencies = [
  "proc-macro2",
 ]
+
+[[package]]
+name = "range_ranger"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "40d8763fabc358e776ad5a1deae52e6d987432350b86b58ee3e5680d18259be0"
 
 [[package]]
 name = "rustc-demangle"

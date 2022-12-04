@@ -1,10 +1,10 @@
 use eyre::eyre;
+use range_ranger::ContinuousRange;
 use std::{
     fmt::{self, Display, Formatter},
     fs::File,
     io::{BufRead, BufReader},
     num::ParseIntError,
-    ops::RangeInclusive,
     path::Path,
     str::FromStr,
 };
@@ -27,18 +27,15 @@ impl Display for Section {
 }
 
 #[derive(Debug, Clone)]
-struct SectionRange(RangeInclusive<Section>);
+struct SectionRange(ContinuousRange<Section>);
 
 impl SectionRange {
     fn contains_range(&self, other: &SectionRange) -> bool {
-        self.0.contains(other.0.start()) && self.0.contains(other.0.end())
+        self.0.contains_range(&other.0)
     }
 
     fn overlaps(&self, other: &SectionRange) -> bool {
-        self.0.contains(other.0.start())
-            || self.0.contains(other.0.end())
-            || other.0.contains(self.0.start())
-            || other.0.contains(self.0.end())
+        self.0.intersects(&other.0)
     }
 }
 
@@ -52,7 +49,7 @@ impl FromStr for SectionRange {
             (Some(from), Some(to), None) => {
                 let from: Section = from.parse()?;
                 let to: Section = to.parse()?;
-                Ok(Self(from..=to))
+                Ok(Self((from..=to).into()))
             }
             _ => Err(eyre!("Not a range: {}", s)),
         }
