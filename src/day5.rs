@@ -132,7 +132,7 @@ impl FromStr for CrateRow {
 struct Crates(Vec<Vec<Crate>>);
 
 impl Crates {
-    fn apply_instruction(&mut self, i: &Instruction) -> eyre::Result<()> {
+    fn apply_instruction(&mut self, i: &Instruction, is_9001: bool) -> eyre::Result<()> {
         // Find the source stack
         let crates_from = self
             .0
@@ -144,6 +144,10 @@ impl Crates {
         for _ in 0..i.amount {
             let c = crates_from.pop().ok_or_else(|| eyre!("Invalid amount"))?;
             crates_to_insert.push(c);
+        }
+
+        if is_9001 {
+            crates_to_insert.reverse();
         }
 
         // Find the destination stack
@@ -198,11 +202,11 @@ struct Input {
 }
 
 impl Input {
-    fn apply_instructions(&self) -> eyre::Result<Crates> {
+    fn apply_instructions(&self, is_9001: bool) -> eyre::Result<Crates> {
         let mut crates = self.crates.clone();
 
         for instruction in &self.instructions {
-            crates.apply_instruction(instruction)?;
+            crates.apply_instruction(instruction, is_9001)?;
         }
 
         Ok(crates)
@@ -241,8 +245,12 @@ pub fn day5() -> eyre::Result<()> {
     let lines = load_from_file("data/day5.txt")?;
 
     {
-        let after = lines.apply_instructions()?;
+        let after = lines.apply_instructions(false)?;
         println!("Day 5.1: {}", after.tops());
+    }
+    {
+        let after = lines.apply_instructions(true)?;
+        println!("Day 5.2: {}", after.tops());
     }
 
     Ok(())
@@ -321,12 +329,29 @@ move 1 from 1 to 2"#;
             "[A] [D] [E]".parse().unwrap(),
         ];
         let mut c: Crates = r.into();
-        c.apply_instruction(&"move 2 from 2 to 1".parse().unwrap())
+        c.apply_instruction(&"move 2 from 2 to 1".parse().unwrap(), false)
             .unwrap();
 
         println!("{:#?}", c);
         assert_eq!(c.0.len(), 3);
         assert_eq!(c.0[0], vec![Crate('A'), Crate('B'), Crate('D')]);
+        assert_eq!(c.0[1], vec![]);
+        assert_eq!(c.0[2], vec![Crate('E'), Crate('C')]);
+    }
+
+    #[test]
+    fn crates_instruction_9001() {
+        let r: Vec<CrateRow> = vec![
+            "    [B] [C]".parse().unwrap(),
+            "[A] [D] [E]".parse().unwrap(),
+        ];
+        let mut c: Crates = r.into();
+        c.apply_instruction(&"move 2 from 2 to 1".parse().unwrap(), true)
+            .unwrap();
+
+        println!("{:#?}", c);
+        assert_eq!(c.0.len(), 3);
+        assert_eq!(c.0[0], vec![Crate('A'), Crate('D'), Crate('B')]);
         assert_eq!(c.0[1], vec![]);
         assert_eq!(c.0[2], vec![Crate('E'), Crate('C')]);
     }
@@ -340,7 +365,7 @@ move 1 from 1 to 2"#;
     #[test]
     fn run_instructions() {
         let (_, input) = parse_input(TEST_VECTOR).unwrap();
-        let after = input.apply_instructions().unwrap();
+        let after = input.apply_instructions(false).unwrap();
 
         assert_eq!(after.0.len(), 3);
         assert_eq!(after.0[0], vec![Crate('C')]);
@@ -350,5 +375,20 @@ move 1 from 1 to 2"#;
             vec![Crate('P'), Crate('D'), Crate('N'), Crate('Z')]
         );
         assert_eq!(after.tops(), "CMZ");
+    }
+
+    #[test]
+    fn run_instructions_9001() {
+        let (_, input) = parse_input(TEST_VECTOR).unwrap();
+        let after = input.apply_instructions(true).unwrap();
+
+        assert_eq!(after.0.len(), 3);
+        assert_eq!(after.0[0], vec![Crate('M')]);
+        assert_eq!(after.0[1], vec![Crate('C')]);
+        assert_eq!(
+            after.0[2],
+            vec![Crate('P'), Crate('Z'), Crate('N'), Crate('D')]
+        );
+        assert_eq!(after.tops(), "MCD");
     }
 }
