@@ -128,11 +128,17 @@ impl FromStr for CrateRow {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum CraneModel {
+    CrateMover9000,
+    CrateMover9001,
+}
+
 #[derive(Debug, Clone)]
 struct Crates(Vec<Vec<Crate>>);
 
 impl Crates {
-    fn apply_instruction(&mut self, i: &Instruction, is_9001: bool) -> eyre::Result<()> {
+    fn apply_instruction(&mut self, i: &Instruction, model: CraneModel) -> eyre::Result<()> {
         // Find the source stack
         let crates_from = self
             .0
@@ -146,7 +152,7 @@ impl Crates {
             crates_to_insert.push(c);
         }
 
-        if is_9001 {
+        if model == CraneModel::CrateMover9001 {
             crates_to_insert.reverse();
         }
 
@@ -202,11 +208,11 @@ struct Input {
 }
 
 impl Input {
-    fn apply_instructions(&self, is_9001: bool) -> eyre::Result<Crates> {
+    fn apply_instructions(&self, model: CraneModel) -> eyre::Result<Crates> {
         let mut crates = self.crates.clone();
 
         for instruction in &self.instructions {
-            crates.apply_instruction(instruction, is_9001)?;
+            crates.apply_instruction(instruction, model)?;
         }
 
         Ok(crates)
@@ -245,11 +251,11 @@ pub fn day5() -> eyre::Result<()> {
     let lines = load_from_file("data/day5.txt")?;
 
     {
-        let after = lines.apply_instructions(false)?;
+        let after = lines.apply_instructions(CraneModel::CrateMover9000)?;
         println!("Day 5.1: {}", after.tops());
     }
     {
-        let after = lines.apply_instructions(true)?;
+        let after = lines.apply_instructions(CraneModel::CrateMover9001)?;
         println!("Day 5.2: {}", after.tops());
     }
 
@@ -329,8 +335,11 @@ move 1 from 1 to 2"#;
             "[A] [D] [E]".parse().unwrap(),
         ];
         let mut c: Crates = r.into();
-        c.apply_instruction(&"move 2 from 2 to 1".parse().unwrap(), false)
-            .unwrap();
+        c.apply_instruction(
+            &"move 2 from 2 to 1".parse().unwrap(),
+            CraneModel::CrateMover9000,
+        )
+        .unwrap();
 
         println!("{:#?}", c);
         assert_eq!(c.0.len(), 3);
@@ -346,8 +355,11 @@ move 1 from 1 to 2"#;
             "[A] [D] [E]".parse().unwrap(),
         ];
         let mut c: Crates = r.into();
-        c.apply_instruction(&"move 2 from 2 to 1".parse().unwrap(), true)
-            .unwrap();
+        c.apply_instruction(
+            &"move 2 from 2 to 1".parse().unwrap(),
+            CraneModel::CrateMover9001,
+        )
+        .unwrap();
 
         println!("{:#?}", c);
         assert_eq!(c.0.len(), 3);
@@ -365,7 +377,9 @@ move 1 from 1 to 2"#;
     #[test]
     fn run_instructions() {
         let (_, input) = parse_input(TEST_VECTOR).unwrap();
-        let after = input.apply_instructions(false).unwrap();
+        let after = input
+            .apply_instructions(CraneModel::CrateMover9000)
+            .unwrap();
 
         assert_eq!(after.0.len(), 3);
         assert_eq!(after.0[0], vec![Crate('C')]);
@@ -380,7 +394,9 @@ move 1 from 1 to 2"#;
     #[test]
     fn run_instructions_9001() {
         let (_, input) = parse_input(TEST_VECTOR).unwrap();
-        let after = input.apply_instructions(true).unwrap();
+        let after = input
+            .apply_instructions(CraneModel::CrateMover9001)
+            .unwrap();
 
         assert_eq!(after.0.len(), 3);
         assert_eq!(after.0[0], vec![Crate('M')]);

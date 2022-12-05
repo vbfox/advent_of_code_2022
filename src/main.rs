@@ -23,7 +23,7 @@ fn previous_days() -> Result<()> {
 fn main() -> Result<()> {
     color_eyre::install()?;
 
-    // previous_days()?;
+    previous_days()?;
     day5::day5()?;
 
     Ok(())
