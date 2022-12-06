@@ -23,7 +23,7 @@ fn has_repetitions(s: &str) -> bool {
     false
 }
 
-fn find_marker<'a>(s: &'a str, len: usize) -> Option<usize> {
+fn find_marker(s: &str, len: usize) -> Option<usize> {
     if s.len() < len {
         return None;
     }
