@@ -15,6 +15,9 @@ Day 4.2: 905
 
 Day 5.1: VQZNJMWTR
 Day 5.2: NLCDCLVMQ
+
+Day 6.1: 1625
+Day 6.2: 2250
 ```
 
 Instructions:
@@ -24,3 +27,4 @@ Instructions:
 * [Day 3](data/day3.md)
 * [Day 4](data/day4.md)
 * [Day 5](data/day5.md)
+* [Day 6](data/day6.md)
