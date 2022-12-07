@@ -18,6 +18,9 @@ Day 5.2: NLCDCLVMQ
 
 Day 6.1: 1625
 Day 6.2: 2250
+
+Day 7.1: 1428881
+Day 7.2: 10475598
 ```
 
 Instructions:
@@ -28,3 +31,4 @@ Instructions:
 * [Day 4](data/day4.md)
 * [Day 5](data/day5.md)
 * [Day 6](data/day6.md)
+* [Day 7](data/day7.md)
