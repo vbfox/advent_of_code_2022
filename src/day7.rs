@@ -233,7 +233,7 @@ $ ls
         assert_eq!(lines[2], InputLine::Dir("a".to_string()));
         assert_eq!(
             lines[3],
-            InputLine::File("b.txt".to_string(), 14848514_usize)
+            InputLine::File("b.txt".to_string(), 14_848_514_usize)
         );
     }
 
@@ -254,9 +254,9 @@ $ ls
         let sizes = DirSizes::from_fs(&fs);
 
         assert_eq!(sizes.get(&PathBuf::from("a/e")), Some(584));
-        assert_eq!(sizes.get(&PathBuf::from("a")), Some(94853));
-        assert_eq!(sizes.get(&PathBuf::from("d")), Some(24933642));
-        assert_eq!(sizes.get(&PathBuf::from("")), Some(48381165));
+        assert_eq!(sizes.get(&PathBuf::from("a")), Some(94_853));
+        assert_eq!(sizes.get(&PathBuf::from("d")), Some(24_933_642));
+        assert_eq!(sizes.get(&PathBuf::from("")), Some(48_381_165));
     }
 
     #[test]
@@ -264,8 +264,8 @@ $ ls
         let lines = load_from_reader(TEST_VECTOR.as_bytes()).unwrap();
         let fs = Fs::from_input(&lines);
         let sizes = DirSizes::from_fs(&fs);
-        let sum = sizes.sum_smaller_than(100000);
-        assert_eq!(sum, 95437);
+        let sum = sizes.sum_smaller_than(100_000);
+        assert_eq!(sum, 95_437);
     }
 
     #[test]
