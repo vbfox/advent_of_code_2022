@@ -47,6 +47,25 @@ jobs:
       - name: Build
         run: cargo build --verbose --release
 
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rust: [1.65.0]
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.rust }}
+          override: true
+      - uses: taiki-e/install-action@v1
+        with:
+          tool: cargo-nextest
+      - name: Test
+        run: cargo nextest run
+
   fmt:
     name: Rustfmt
     runs-on: ubuntu-latest
