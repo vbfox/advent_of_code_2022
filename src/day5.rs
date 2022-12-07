@@ -321,7 +321,6 @@ move 1 from 1 to 2"#;
         ];
         let c: Crates = r.into();
 
-        println!("{:#?}", c);
         assert_eq!(c.0.len(), 3);
         assert_eq!(c.0[0], vec![Crate('A')]);
         assert_eq!(c.0[1], vec![Crate('D'), Crate('B')]);
@@ -341,7 +340,6 @@ move 1 from 1 to 2"#;
         )
         .unwrap();
 
-        println!("{:#?}", c);
         assert_eq!(c.0.len(), 3);
         assert_eq!(c.0[0], vec![Crate('A'), Crate('B'), Crate('D')]);
         assert_eq!(c.0[1], vec![]);
@@ -361,7 +359,6 @@ move 1 from 1 to 2"#;
         )
         .unwrap();
 
-        println!("{:#?}", c);
         assert_eq!(c.0.len(), 3);
         assert_eq!(c.0[0], vec![Crate('A'), Crate('D'), Crate('B')]);
         assert_eq!(c.0[1], vec![]);

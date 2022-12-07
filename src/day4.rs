@@ -137,7 +137,6 @@ mod tests {
     fn sample() {
         let lines = load_from_string(TEST_VECTOR).unwrap();
 
-        println!("{:?}", lines);
         assert_eq!(lines.len(), 6);
         assert_eq!(lines[0].fully_contains(), false);
         assert_eq!(lines[1].fully_contains(), false);
@@ -154,7 +153,6 @@ mod tests {
     fn sample2() {
         let lines = load_from_string(TEST_VECTOR).unwrap();
 
-        println!("{:?}", lines);
         assert_eq!(lines.len(), 6);
         assert_eq!(lines[0].overlaps(), false);
         assert_eq!(lines[1].overlaps(), false);
