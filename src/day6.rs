@@ -12,15 +12,7 @@ fn load_from_file(path: impl AsRef<Path>) -> io::Result<String> {
 }
 
 fn has_repetitions(s: &str) -> bool {
-    let mut set: HashSet<char> = HashSet::new();
-    for c in s.chars() {
-        if set.contains(&c) {
-            return true;
-        }
-        set.insert(c);
-    }
-
-    false
+    HashSet::<char>::from_iter(s.chars()).len() != s.len()
 }
 
 fn find_marker(s: &str, len: usize) -> Option<usize> {

@@ -1,3 +1,8 @@
+use std::fmt::Display;
+
+use eyre::eyre;
+use nom::{combinator::all_consuming, error::ParseError, Finish, InputLength, Parser};
+
 pub struct CharSliceIterator<'a> {
     s: &'a str,
     index: usize,
@@ -116,4 +121,19 @@ mod find_common_items_tests {
 
         assert_eq!(common_items, Vec::<&i32>::default());
     }
+}
+
+// --------------------------------------------------------------------------
+
+/// Finishes a nom parser and returns a Result with [eyre] used for errors.
+pub fn nom_finish<I, O, E: ParseError<I>, F>(f: F, input: I) -> eyre::Result<O>
+where
+    I: InputLength,
+    F: Parser<I, O, E>,
+    E: Display,
+{
+    let (_, result) = all_consuming(f)(input)
+        .finish()
+        .map_err(|e| eyre!(e.to_string()))?;
+    Ok(result)
 }

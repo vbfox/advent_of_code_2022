@@ -11,10 +11,13 @@ use nom::{
     branch::alt,
     bytes::complete::{tag, take},
     character::complete::{digit1, newline},
-    combinator::{self, map_res},
+    combinator::{map, map_res, value},
     multi::{many0, many1, separated_list0, separated_list1},
+    sequence::{delimited, preceded, tuple},
     IResult,
 };
+
+use crate::utils::nom_finish;
 
 #[derive(Debug, Clone)]
 struct Instruction {
@@ -28,13 +31,14 @@ fn parse_usize(input: &str) -> IResult<&str, usize> {
 }
 
 fn parse_instruction(input: &str) -> IResult<&str, Instruction> {
-    let (input, _) = tag("move ")(input)?;
-    let (input, amount) = parse_usize(input)?;
-    let (input, _) = tag(" from ")(input)?;
-    let (input, from) = parse_usize(input)?;
-    let (input, _) = tag(" to ")(input)?;
-    let (input, to) = parse_usize(input)?;
-    Ok((input, Instruction { amount, from, to }))
+    map(
+        tuple((
+            preceded(tag("move "), parse_usize),
+            preceded(tag(" from "), parse_usize),
+            preceded(tag(" to "), parse_usize),
+        )),
+        |(amount, from, to)| Instruction { amount, from, to },
+    )(input)
 }
 
 fn parse_instruction_lines(input: &str) -> IResult<&str, Vec<Instruction>> {
@@ -66,11 +70,10 @@ impl Display for Crate {
 }
 
 fn parse_crate(input: &str) -> IResult<&str, Crate> {
-    let (input, _) = tag("[")(input)?;
-    let (input, c) = take(1usize)(input)?;
-    let (input, _) = tag("]")(input)?;
-    let c = c.chars().next().unwrap();
-    Ok((input, Crate(c)))
+    map(delimited(tag("["), take(1usize), tag("]")), |s: &str| {
+        let c = s.chars().next().expect("1 character was taken");
+        Crate(c)
+    })(input)
 }
 
 #[derive(Debug, Clone)]
@@ -97,14 +100,11 @@ impl Display for CrateRow {
 }
 
 fn parse_crate_option(input: &str) -> IResult<&str, Option<Crate>> {
-    let success = combinator::map(parse_crate, Some);
-    let failure = combinator::map(tag("   "), |_| None);
-    alt((success, failure))(input)
+    alt((map(parse_crate, Some), value(None, tag("   "))))(input)
 }
 
 fn parse_crate_row(input: &str) -> IResult<&str, CrateRow> {
-    let (input, row) = separated_list0(tag(" "), parse_crate_option)(input)?;
-    Ok((input, CrateRow(row)))
+    map(separated_list0(tag(" "), parse_crate_option), CrateRow)(input)
 }
 
 fn parse_crate_row_lines(input: &str) -> IResult<&str, Vec<CrateRow>> {
@@ -112,19 +112,21 @@ fn parse_crate_row_lines(input: &str) -> IResult<&str, Vec<CrateRow>> {
 }
 
 fn parse_digits_row(input: &str) -> IResult<&str, ()> {
-    let (input, _) = many0(tag(" "))(input)?;
-    let (input, _) = separated_list1(many1(tag(" ")), parse_usize)(input)?;
-    let (input, _) = many0(tag(" "))(input)?;
-
-    Ok((input, ()))
+    value(
+        (),
+        delimited(
+            many0(tag(" ")),
+            separated_list1(many1(tag(" ")), parse_usize),
+            many0(tag(" ")),
+        ),
+    )(input)
 }
 
 impl FromStr for CrateRow {
     type Err = eyre::Report;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let (_, row) = parse_crate_row(s).map_err(|e| eyre!(e.to_owned()))?;
-        Ok(row)
+        nom_finish(parse_crate_row, s)
     }
 }
 
@@ -238,8 +240,8 @@ fn parse_input(input: &str) -> IResult<&str, Input> {
 
 fn load_from_reader(reader: impl BufRead) -> eyre::Result<Input> {
     let s = io::read_to_string(reader)?;
-    let (_, input) = parse_input(&s).map_err(|e| eyre!(e.to_owned()))?;
-    Ok(input)
+
+    nom_finish(parse_input, &s)
 }
 
 fn load_from_file(path: impl AsRef<Path>) -> eyre::Result<Input> {
