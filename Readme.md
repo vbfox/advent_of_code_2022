@@ -1,5 +1,11 @@
 # Advent of Code 2022
 
+Tools used:
+* [just](https://github.com/casey/just) to run commands
+* [cargo-nextest](https://nexte.st/) as test runner
+
+## Result
+
 ```
 Day 1.1: 72602
 Day 1.2: 207410
@@ -26,7 +32,7 @@ Day 8.1: 1859
 Day 8.2: 332640
 ```
 
-Instructions:
+## Instructions
 
 * [Day 1](data/day1.md)
 * [Day 2](data/day2.md)
