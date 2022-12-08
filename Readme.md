@@ -21,6 +21,9 @@ Day 6.2: 2250
 
 Day 7.1: 1428881
 Day 7.2: 10475598
+
+Day 8.1: 1859
+Day 8.2: 332640
 ```
 
 Instructions:
@@ -32,3 +35,4 @@ Instructions:
 * [Day 5](data/day5.md)
 * [Day 6](data/day6.md)
 * [Day 7](data/day7.md)
+* [Day 8](data/day8.md)

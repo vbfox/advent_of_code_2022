@@ -1,4 +1,5 @@
 use std::fmt::Display;
+use std::iter::Flatten;
 use std::num::ParseIntError;
 use std::str::FromStr;
 
@@ -80,57 +81,70 @@ impl FromStr for Forest {
     }
 }
 
-struct TreeVisibility {
-    is_visible: Vec<Vec<bool>>,
+struct Vec2D<T> {
+    values: Vec<Vec<T>>,
+    rows: usize,
+    cols: usize,
 }
 
-impl TreeVisibility {
-    fn new(rows: usize, cols: usize, value: bool) -> Self {
-        TreeVisibility {
-            is_visible: vec![vec![value; cols]; rows],
-        }
-    }
-
-    fn rows(&self) -> usize {
-        self.is_visible.len()
-    }
-
-    fn cols(&self) -> usize {
-        if self.rows() > 0 {
-            self.is_visible[0].len()
-        } else {
-            0
+impl<T: std::clone::Clone> Vec2D<T> {
+    fn new(rows: usize, cols: usize, value: T) -> Self {
+        Vec2D {
+            values: vec![vec![value; cols]; rows],
+            rows,
+            cols,
         }
     }
 
     #[allow(dead_code)]
-    fn get(&self, row: usize, col: usize) -> Option<bool> {
-        self.is_visible.get(row).and_then(|r| r.get(col)).cloned()
+    fn get(&self, row: usize, col: usize) -> Option<T> {
+        self.values.get(row).and_then(|r| r.get(col)).cloned()
     }
 
-    fn op(&mut self, other: &Self, op: fn(bool, bool) -> bool) -> eyre::Result<()> {
-        let rows = self.rows();
-        let cols = self.cols();
-        if rows != other.rows() || cols != other.cols() {
+    fn set(&mut self, row: usize, col: usize, value: T) -> Option<()> {
+        let row_vec = self.values.get_mut(row)?;
+        let cell = row_vec.get_mut(col)?;
+        *cell = value;
+        Some(())
+    }
+
+    fn op(&mut self, other: &Self, op: fn(&T, &T) -> T) -> eyre::Result<()> {
+        if self.rows != other.rows || self.cols != other.cols {
             bail!(
                 "Dimension mismatch: {}x{} vs {}x{}",
-                rows,
-                cols,
-                other.rows(),
-                other.cols()
+                self.rows,
+                self.cols,
+                other.rows,
+                other.cols
             );
         }
 
-        for row in 0..rows {
-            for col in 0..cols {
-                self.is_visible[row][col] =
-                    op(self.is_visible[row][col], other.is_visible[row][col]);
+        for row in 0..self.rows {
+            for col in 0..self.cols {
+                self.values[row][col] = op(&self.values[row][col], &other.values[row][col]);
             }
         }
 
         Ok(())
     }
 
+    fn iter(&self) -> Flatten<std::slice::Iter<'_, Vec<T>>> {
+        self.values.iter().flatten()
+    }
+}
+
+struct TreeVisibility {
+    is_visible: Vec2D<bool>,
+}
+
+impl TreeVisibility {
+    fn new(rows: usize, cols: usize, value: bool) -> Self {
+        TreeVisibility {
+            is_visible: Vec2D::new(rows, cols, value),
+        }
+    }
+
+    #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
     fn compute_directional(
         forest: &Forest,
         direction_row: i64,
@@ -156,7 +170,10 @@ impl TreeVisibility {
                         .height;
 
                     if size_at_check >= size {
-                        visibility.is_visible[row][col] = false;
+                        visibility
+                            .is_visible
+                            .set(row, col, false)
+                            .expect("We iterate over valid indices");
                         break;
                     }
 
@@ -171,20 +188,119 @@ impl TreeVisibility {
 
     pub fn compute(forest: &Forest) -> eyre::Result<Self> {
         let mut result = Self::compute_directional(forest, 0, 1)?;
-        result.op(&Self::compute_directional(forest, 0, -1)?, |a, b| a || b)?;
-        result.op(&Self::compute_directional(forest, 1, 0)?, |a, b| a || b)?;
-        result.op(&Self::compute_directional(forest, -1, 0)?, |a, b| a || b)?;
+        result.is_visible.op(
+            &Self::compute_directional(forest, 0, -1)?.is_visible,
+            |a, b| *a || *b,
+        )?;
+        result.is_visible.op(
+            &Self::compute_directional(forest, 1, 0)?.is_visible,
+            |a, b| *a || *b,
+        )?;
+        result.is_visible.op(
+            &Self::compute_directional(forest, -1, 0)?.is_visible,
+            |a, b| *a || *b,
+        )?;
+
         Ok(result)
     }
 
+    #[allow(dead_code)]
+    fn get(&self, row: usize, col: usize) -> Option<bool> {
+        self.is_visible.get(row, col)
+    }
+
     pub fn count_visible(&self) -> usize {
-        self.is_visible.iter().flatten().filter(|&&v| v).count()
+        self.is_visible.iter().filter(|&&v| v).count()
+    }
+}
+
+struct ViewingDistance {
+    distance: Vec2D<usize>,
+}
+
+impl ViewingDistance {
+    fn new(rows: usize, cols: usize, value: usize) -> Self {
+        ViewingDistance {
+            distance: Vec2D::new(rows, cols, value),
+        }
+    }
+
+    #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
+    fn compute_directional(
+        forest: &Forest,
+        direction_row: i64,
+        direction_col: i64,
+    ) -> eyre::Result<Self> {
+        let rows = forest.rows();
+        let cols = forest.cols();
+        let mut distance = Self::new(rows, cols, 0);
+
+        for row in 0..rows {
+            for col in 0..cols {
+                let size = forest.get(row, col).unwrap().height;
+                let mut check_row = (row as i64) + direction_row;
+                let mut check_col = (col as i64) + direction_col;
+                let mut current_distance = 0;
+                while check_col >= 0
+                    && check_row >= 0
+                    && check_row < rows as i64
+                    && check_col < cols as i64
+                {
+                    current_distance += 1;
+                    let size_at_check = forest
+                        .get(check_row as usize, check_col as usize)
+                        .ok_or_else(|| eyre!("Invalid index: {}x{}", check_row, check_col))?
+                        .height;
+
+                    if size_at_check >= size {
+                        break;
+                    }
+
+                    check_row += direction_row;
+                    check_col += direction_col;
+                }
+
+                distance
+                    .distance
+                    .set(row, col, current_distance)
+                    .expect("We iterate over valid indices");
+            }
+        }
+
+        Ok(distance)
+    }
+
+    pub fn compute(forest: &Forest) -> eyre::Result<Self> {
+        let mut result = Self::compute_directional(forest, 0, 1)?;
+        result.distance.op(
+            &Self::compute_directional(forest, 0, -1)?.distance,
+            |a, b| *a * *b,
+        )?;
+        result.distance.op(
+            &Self::compute_directional(forest, 1, 0)?.distance,
+            |a, b| *a * *b,
+        )?;
+        result.distance.op(
+            &Self::compute_directional(forest, -1, 0)?.distance,
+            |a, b| *a * *b,
+        )?;
+
+        Ok(result)
+    }
+
+    #[allow(dead_code)]
+    fn get(&self, row: usize, col: usize) -> Option<usize> {
+        self.distance.get(row, col)
+    }
+
+    pub fn get_max(&self) -> Option<usize> {
+        self.distance.iter().max().copied()
     }
 }
 
 impl Display for TreeVisibility {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for row in &self.is_visible {
+        for row in &self.is_visible.values {
             for is_visible in row {
                 if *is_visible {
                     write!(f, "X")?;
@@ -202,7 +318,14 @@ pub fn day8() -> eyre::Result<()> {
     let forest: Forest = include_str!("../data/day8.txt").parse()?;
     {
         let visibility = TreeVisibility::compute(&forest)?;
-        println!("Day 8.2: {}", visibility.count_visible());
+        println!("Day 8.1: {}", visibility.count_visible());
+    }
+    {
+        let distance = ViewingDistance::compute(&forest)?;
+        println!(
+            "Day 8.2: {}",
+            distance.get_max().ok_or_else(|| eyre!("No max ?"))?
+        );
     }
     Ok(())
 }
@@ -267,7 +390,24 @@ mod tests {
     fn count_visibility() {
         let forest: Forest = TEST_VECTOR.parse().unwrap();
         let vis = TreeVisibility::compute(&forest).unwrap();
-        let count = vis.count_visible();
-        assert_eq!(count, 21);
+
+        assert_eq!(vis.count_visible(), 21);
+    }
+
+    #[test]
+    fn distance() {
+        let forest: Forest = TEST_VECTOR.parse().unwrap();
+        let distance = ViewingDistance::compute(&forest).unwrap();
+
+        assert_eq!(distance.get(1, 2).unwrap(), 4);
+        assert_eq!(distance.get(3, 2).unwrap(), 8);
+    }
+
+    #[test]
+    fn max_distance() {
+        let forest: Forest = TEST_VECTOR.parse().unwrap();
+        let distance = ViewingDistance::compute(&forest).unwrap();
+
+        assert_eq!(distance.get_max(), Some(8));
     }
 }
