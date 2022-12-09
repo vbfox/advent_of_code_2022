@@ -1,4 +1,4 @@
-use std::{collections::HashSet, fmt::Display, str::FromStr};
+use std::{collections::HashSet, fmt::Display, str::FromStr, time::Instant};
 
 use eyre::eyre;
 use itertools::Itertools;
@@ -82,35 +82,23 @@ impl FromStr for Motions {
     }
 }
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 struct Position {
-    x: isize,
-    y: isize,
+    x: i32,
+    y: i32,
 }
 
 impl Position {
-    pub fn new(x: isize, y: isize) -> Self {
+    pub fn new(x: i32, y: i32) -> Self {
         Self { x, y }
     }
 
-    pub fn compute_move(&self, direction: Direction) -> Self {
+    pub fn do_move(&mut self, direction: Direction) {
         match direction {
-            Direction::Up => Self {
-                x: self.x,
-                y: self.y + 1,
-            },
-            Direction::Down => Self {
-                x: self.x,
-                y: self.y - 1,
-            },
-            Direction::Left => Self {
-                x: self.x - 1,
-                y: self.y,
-            },
-            Direction::Right => Self {
-                x: self.x + 1,
-                y: self.y,
-            },
+            Direction::Up => self.y += 1,
+            Direction::Down => self.y -= 1,
+            Direction::Left => self.x -= 1,
+            Direction::Right => self.x += 1,
         }
     }
 }
@@ -125,13 +113,19 @@ impl Display for Position {
 struct Part {
     name: char,
     position: Position,
-    visited: HashSet<Position>,
+    visited: Option<HashSet<Position>>,
 }
 
 impl Part {
-    fn new(name: char, position: Position) -> Self {
-        let mut visited = HashSet::new();
-        visited.insert(position.clone());
+    fn new(name: char, position: Position, save_visited: bool) -> Self {
+        let visited = if save_visited {
+            let mut visited = HashSet::new();
+            visited.insert(position);
+            Some(visited)
+        } else {
+            None
+        };
+
         Self {
             name,
             position,
@@ -139,12 +133,24 @@ impl Part {
         }
     }
 
-    fn do_move(&mut self, direction: Direction) {
-        self.position = self.position.compute_move(direction);
-        self.visited.insert(self.position.clone());
+    fn insert_visited(&mut self, position: Position) {
+        if let Some(visited) = &mut self.visited {
+            visited.insert(position);
+        }
     }
 
-    fn follow(&mut self, other: &Position) {
+    pub fn has_visited(&self, position: Position) -> bool {
+        self.visited
+            .as_ref()
+            .map_or(false, |visited| visited.contains(&position))
+    }
+
+    fn do_move(&mut self, direction: Direction) {
+        self.position.do_move(direction);
+        self.insert_visited(self.position);
+    }
+
+    fn follow(&mut self, other: Position) {
         // We know that the head moved only one step
         let mut dx = other.x - self.position.x;
         let mut dy = other.y - self.position.y;
@@ -162,7 +168,7 @@ impl Part {
                 dx -= dx.signum();
                 dy -= dy.signum();
             }
-            self.visited.insert(self.position.clone());
+            self.insert_visited(self.position);
         }
     }
 }
@@ -177,19 +183,15 @@ impl BoardState {
     const TAIL_NAMES: &'static str = "193456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
     pub fn new(tail_count: usize) -> Self {
-        let tail = Position { x: 0, y: 0 };
-        let mut visited_by_tail = HashSet::new();
-        visited_by_tail.insert(tail);
-
         let mut tails = Vec::new();
         for i in 0..tail_count {
             let name = BoardState::TAIL_NAMES.chars().nth(i).unwrap();
-            let tail = Part::new(name, Position::new(0, 0));
+            let tail = Part::new(name, Position::new(0, 0), i == tail_count - 1);
             tails.push(tail);
         }
 
         Self {
-            head: Part::new('H', Position::new(0, 0)),
+            head: Part::new('H', Position::new(0, 0), false),
             tails,
         }
     }
@@ -197,7 +199,7 @@ impl BoardState {
     fn adjust_tail_after_one_step(&mut self) {
         let mut current = &self.head;
         for tail in &mut self.tails {
-            tail.follow(&current.position);
+            tail.follow(current.position);
             // println!("Moved tail {} to {}", tail.name, tail.position);
             current = tail;
         }
@@ -217,7 +219,8 @@ impl BoardState {
     }
 
     pub fn visited_positions(&self) -> usize {
-        self.tails.last().unwrap().visited.len()
+        let last = self.tails.last().unwrap();
+        last.visited.as_ref().unwrap().len()
     }
 }
 
@@ -226,10 +229,10 @@ impl Display for BoardState {
         let mut positions = self
             .tails
             .iter()
-            .flat_map(|t| t.visited.iter())
-            .cloned()
+            .flat_map(|t| t.visited.iter().flat_map(std::collections::HashSet::iter))
+            .copied()
             .collect::<Vec<_>>();
-        positions.push(self.head.position.clone());
+        positions.push(self.head.position);
 
         let min_x = positions.iter().map(|p| p.x).min().unwrap();
         let max_x = positions.iter().map(|p| p.x).max().unwrap();
@@ -245,7 +248,7 @@ impl Display for BoardState {
                     write!(f, "{}", self.head.name)?;
                 } else if let Some(tail) = self.tails.iter().find(|t| t.position == position) {
                     write!(f, "{}", tail.name)?;
-                } else if last_tail.visited.contains(&position) {
+                } else if last_tail.has_visited(position) {
                     write!(f, "#")?;
                 } else {
                     write!(f, ".")?;
@@ -261,14 +264,17 @@ pub fn day9() -> eyre::Result<()> {
     let motions: Motions = include_str!("../data/day9.txt").parse()?;
     {
         let mut s = BoardState::new(1);
+        let start = Instant::now();
         s.do_moves(&motions);
-        println!("Day 9.1: {}", s.visited_positions());
+        println!("Day 9.1: {} ({:?})", s.visited_positions(), start.elapsed());
     }
     {
         let mut s = BoardState::new(9);
+        let start = Instant::now();
         s.do_moves(&motions);
-        println!("Day 9.2: {}", s.visited_positions());
+        println!("Day 9.2: {} ({:?})", s.visited_positions(), start.elapsed());
     }
+
     Ok(())
 }
 
@@ -301,43 +307,29 @@ R 2"#;
         s.adjust_tail_after_one_step();
         assert_eq!(s.tails.last().unwrap().position, Position { x: -4, y: 0 });
 
-        assert_eq!(s.tails.last().unwrap().visited.len(), 6);
+        assert_eq!(s.tails.last().unwrap().visited.as_ref().unwrap().len(), 6);
+        assert!(s.tails.last().unwrap().has_visited(Position { x: 0, y: 0 }));
+        assert!(s.tails.last().unwrap().has_visited(Position { x: 1, y: 0 }));
         assert!(s
             .tails
             .last()
             .unwrap()
-            .visited
-            .contains(&Position { x: 0, y: 0 }));
+            .has_visited(Position { x: -1, y: 0 }));
         assert!(s
             .tails
             .last()
             .unwrap()
-            .visited
-            .contains(&Position { x: 1, y: 0 }));
+            .has_visited(Position { x: -2, y: 0 }));
         assert!(s
             .tails
             .last()
             .unwrap()
-            .visited
-            .contains(&Position { x: -1, y: 0 }));
+            .has_visited(Position { x: -3, y: 0 }));
         assert!(s
             .tails
             .last()
             .unwrap()
-            .visited
-            .contains(&Position { x: -2, y: 0 }));
-        assert!(s
-            .tails
-            .last()
-            .unwrap()
-            .visited
-            .contains(&Position { x: -3, y: 0 }));
-        assert!(s
-            .tails
-            .last()
-            .unwrap()
-            .visited
-            .contains(&Position { x: -4, y: 0 }));
+            .has_visited(Position { x: -4, y: 0 }));
     }
 
     #[test]
@@ -355,43 +347,29 @@ R 2"#;
         s.adjust_tail_after_one_step();
         assert_eq!(s.tails.last().unwrap().position, Position { x: 0, y: -4 });
 
-        assert_eq!(s.tails.last().unwrap().visited.len(), 6);
+        assert_eq!(s.tails.last().unwrap().visited.as_ref().unwrap().len(), 6);
+        assert!(s.tails.last().unwrap().has_visited(Position { x: 0, y: 0 }));
+        assert!(s.tails.last().unwrap().has_visited(Position { x: 0, y: 1 }));
         assert!(s
             .tails
             .last()
             .unwrap()
-            .visited
-            .contains(&Position { x: 0, y: 0 }));
+            .has_visited(Position { x: 0, y: -1 }));
         assert!(s
             .tails
             .last()
             .unwrap()
-            .visited
-            .contains(&Position { x: 0, y: 1 }));
+            .has_visited(Position { x: 0, y: -2 }));
         assert!(s
             .tails
             .last()
             .unwrap()
-            .visited
-            .contains(&Position { x: 0, y: -1 }));
+            .has_visited(Position { x: 0, y: -3 }));
         assert!(s
             .tails
             .last()
             .unwrap()
-            .visited
-            .contains(&Position { x: 0, y: -2 }));
-        assert!(s
-            .tails
-            .last()
-            .unwrap()
-            .visited
-            .contains(&Position { x: 0, y: -3 }));
-        assert!(s
-            .tails
-            .last()
-            .unwrap()
-            .visited
-            .contains(&Position { x: 0, y: -4 }));
+            .has_visited(Position { x: 0, y: -4 }));
     }
 
     #[test]
@@ -409,43 +387,29 @@ R 2"#;
         s.adjust_tail_after_one_step();
         assert_eq!(s.tails.last().unwrap().position, Position { x: -4, y: -4 });
 
-        assert_eq!(s.tails.last().unwrap().visited.len(), 6);
+        assert_eq!(s.tails.last().unwrap().visited.as_ref().unwrap().len(), 6);
+        assert!(s.tails.last().unwrap().has_visited(Position { x: 0, y: 0 }));
+        assert!(s.tails.last().unwrap().has_visited(Position { x: 1, y: 1 }));
         assert!(s
             .tails
             .last()
             .unwrap()
-            .visited
-            .contains(&Position { x: 0, y: 0 }));
+            .has_visited(Position { x: -1, y: -1 }));
         assert!(s
             .tails
             .last()
             .unwrap()
-            .visited
-            .contains(&Position { x: 1, y: 1 }));
+            .has_visited(Position { x: -2, y: -2 }));
         assert!(s
             .tails
             .last()
             .unwrap()
-            .visited
-            .contains(&Position { x: -1, y: -1 }));
+            .has_visited(Position { x: -3, y: -3 }));
         assert!(s
             .tails
             .last()
             .unwrap()
-            .visited
-            .contains(&Position { x: -2, y: -2 }));
-        assert!(s
-            .tails
-            .last()
-            .unwrap()
-            .visited
-            .contains(&Position { x: -3, y: -3 }));
-        assert!(s
-            .tails
-            .last()
-            .unwrap()
-            .visited
-            .contains(&Position { x: -4, y: -4 }));
+            .has_visited(Position { x: -4, y: -4 }));
     }
 
     #[test]
