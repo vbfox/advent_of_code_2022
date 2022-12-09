@@ -7,6 +7,7 @@ use eyre::bail;
 use eyre::eyre;
 
 use crate::utils::CharSliceExt;
+use crate::utils::Vec2D;
 
 struct Tree {
     height: u32,
@@ -78,58 +79,6 @@ impl FromStr for Forest {
             forest.add_row(row)?;
         }
         Ok(forest)
-    }
-}
-
-struct Vec2D<T> {
-    values: Vec<Vec<T>>,
-    rows: usize,
-    cols: usize,
-}
-
-impl<T: std::clone::Clone> Vec2D<T> {
-    fn new(rows: usize, cols: usize, value: T) -> Self {
-        Vec2D {
-            values: vec![vec![value; cols]; rows],
-            rows,
-            cols,
-        }
-    }
-
-    #[allow(dead_code)]
-    fn get(&self, row: usize, col: usize) -> Option<T> {
-        self.values.get(row).and_then(|r| r.get(col)).cloned()
-    }
-
-    fn set(&mut self, row: usize, col: usize, value: T) -> Option<()> {
-        let row_vec = self.values.get_mut(row)?;
-        let cell = row_vec.get_mut(col)?;
-        *cell = value;
-        Some(())
-    }
-
-    fn op(&mut self, other: &Self, op: fn(&T, &T) -> T) -> eyre::Result<()> {
-        if self.rows != other.rows || self.cols != other.cols {
-            bail!(
-                "Dimension mismatch: {}x{} vs {}x{}",
-                self.rows,
-                self.cols,
-                other.rows,
-                other.cols
-            );
-        }
-
-        for row in 0..self.rows {
-            for col in 0..self.cols {
-                self.values[row][col] = op(&self.values[row][col], &other.values[row][col]);
-            }
-        }
-
-        Ok(())
-    }
-
-    fn iter(&self) -> Flatten<std::slice::Iter<'_, Vec<T>>> {
-        self.values.iter().flatten()
     }
 }
 

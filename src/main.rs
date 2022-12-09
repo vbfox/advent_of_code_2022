@@ -12,6 +12,7 @@ mod day5;
 mod day6;
 mod day7;
 mod day8;
+mod day9;
 
 #[allow(dead_code)]
 fn previous_days() -> Result<()> {
@@ -22,6 +23,7 @@ fn previous_days() -> Result<()> {
     day5::day5()?;
     day6::day6()?;
     day7::day7()?;
+    day8::day8()?;
 
     Ok(())
 }
@@ -29,8 +31,8 @@ fn previous_days() -> Result<()> {
 fn main() -> Result<()> {
     color_eyre::install()?;
 
-    previous_days()?;
-    day8::day8()?;
+    // previous_days()?;
+    day9::day9()?;
 
     Ok(())
 }
