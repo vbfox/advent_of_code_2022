@@ -1,7 +1,10 @@
-use std::{fmt::Display, iter::Flatten};
+use std::{
+    fmt::{self, Display},
+    iter::Flatten,
+};
 
 use eyre::{bail, eyre};
-use nom::{combinator::all_consuming, error::ParseError, Finish, InputLength, Parser};
+use nom::{error::ParseError, InputLength, Parser};
 
 pub struct CharSliceIterator<'a> {
     s: &'a str,
@@ -126,16 +129,20 @@ mod find_common_items_tests {
 // --------------------------------------------------------------------------
 
 /// Finishes a nom parser and returns a Result with [eyre] used for errors.
-pub fn nom_finish<I, O, E: ParseError<I>, F>(f: F, input: I) -> eyre::Result<O>
+pub fn nom_finish<I, O, E: ParseError<I>, F>(mut f: F, input: I) -> eyre::Result<O>
 where
-    I: InputLength,
+    I: InputLength + fmt::Debug,
     F: Parser<I, O, E>,
     E: Display,
 {
-    let (_, result) = all_consuming(f)(input)
-        .finish()
-        .map_err(|e| eyre!(e.to_string()))?;
-    Ok(result)
+    match f.parse(input) {
+        Ok((s, result)) => match s.input_len() {
+            0 => Ok(result),
+            _ => bail!("Input not fully consumed, remains: {:?}", s),
+        },
+        Err(nom::Err::Error(e)) | Err(nom::Err::Failure(e)) => Err(eyre!(e.to_string())),
+        Err(nom::Err::Incomplete(_)) => Err(eyre!("Incomplete input")),
+    }
 }
 
 // --------------------------------------------------------------------------
