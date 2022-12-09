@@ -92,7 +92,11 @@ struct Position {
 }
 
 impl Position {
-    fn do_move(&self, direction: Direction) -> Self {
+    pub fn new(x: isize, y: isize) -> Self {
+        Self { x, y }
+    }
+
+    pub fn compute_move(&self, direction: Direction) -> Self {
         match direction {
             Direction::Up => Self {
                 x: self.x,
@@ -121,58 +125,92 @@ impl Display for Position {
 }
 
 #[derive(Clone, Debug)]
+struct Part {
+    name: char,
+    position: Position,
+    visited: HashSet<Position>,
+}
+
+impl Part {
+    fn new(name: char, position: Position) -> Self {
+        let mut visited = HashSet::new();
+        visited.insert(position.clone());
+        Self {
+            name,
+            position,
+            visited,
+        }
+    }
+
+    fn do_move(&mut self, direction: Direction) {
+        self.position = self.position.compute_move(direction);
+        self.visited.insert(self.position.clone());
+    }
+
+    fn follow(&mut self, other: &Position) {
+        // We know that the head moved only one step
+        let mut dx = other.x - self.position.x;
+        let mut dy = other.y - self.position.y;
+
+        while dx.abs() > 1 || dy.abs() > 1 {
+            if dx.abs() > 1 && dy == 0 {
+                self.position.x += dx.signum();
+                dx -= dx.signum();
+            } else if dy.abs() > 1 && dx == 0 {
+                self.position.y += dy.signum();
+                dy -= dy.signum();
+            } else {
+                self.position.x += dx.signum();
+                self.position.y += dy.signum();
+                dx -= dx.signum();
+                dy -= dy.signum();
+            }
+            self.visited.insert(self.position.clone());
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
 struct BoardState {
-    visited_by_tail: HashSet<Position>,
-    head: Position,
-    tail: Position,
+    head: Part,
+    tails: Vec<Part>,
 }
 
 impl BoardState {
-    pub fn new() -> Self {
+    const TAIL_NAMES: &'static str = "193456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+    pub fn new(tail_count: usize) -> Self {
         let tail = Position { x: 0, y: 0 };
         let mut visited_by_tail = HashSet::new();
         visited_by_tail.insert(tail.clone());
 
+        let mut tails = Vec::new();
+        for i in 0..tail_count {
+            let name = BoardState::TAIL_NAMES.chars().nth(i).unwrap();
+            let tail = Part::new(name, Position::new(0, 0));
+            tails.push(tail);
+        }
+
         Self {
-            visited_by_tail,
-            head: Position { x: 0, y: 0 },
-            tail,
+            head: Part::new('H', Position::new(0, 0)),
+            tails,
         }
     }
 
     fn adjust_tail_after_one_step(&mut self) {
-        // We know that the head moved only one step
-        let mut dx = self.head.x - self.tail.x;
-        let mut dy = self.head.y - self.tail.y;
-
-        while dx.abs() > 1 || dy.abs() > 1 {
-            if dx.abs() > 1 && dy == 0 {
-                self.tail.x += dx.signum();
-                dx -= dx.signum();
-            } else if dy.abs() > 1 && dx == 0 {
-                self.tail.y += dy.signum();
-                dy -= dy.signum();
-            } else {
-                self.tail.x += dx.signum();
-                self.tail.y += dy.signum();
-                dx -= dx.signum();
-                dy -= dy.signum();
-            }
-            self.visited_by_tail.insert(self.tail.clone());
+        let mut current = &self.head;
+        for tail in self.tails.iter_mut() {
+            tail.follow(&current.position);
+            // println!("Moved tail {} to {}", tail.name, tail.position);
+            current = tail;
         }
     }
 
     pub fn do_move(&mut self, motion: &Motion) {
-        // println!("------");
-        // println!("Before {}: {:#?}", motion, self);
         for direction in motion.unit_motions() {
-            self.head = self.head.do_move(direction);
-            // println!("Moved head to {}", self.head);
+            self.head.do_move(direction);
             self.adjust_tail_after_one_step();
-            // println!("Moved tail to {}", self.tail);
-            self.visited_by_tail.insert(self.tail.clone());
         }
-        // println!("After: {:#?}", self);
     }
 
     pub fn do_moves(&mut self, motions: &Motions) {
@@ -182,24 +220,58 @@ impl BoardState {
     }
 
     pub fn visited_positions(&self) -> usize {
-        self.visited_by_tail.len()
+        self.tails.last().unwrap().visited.len()
+    }
+}
+
+impl Display for BoardState {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut positions = self
+            .tails
+            .iter()
+            .flat_map(|t| t.visited.iter())
+            .cloned()
+            .collect::<Vec<_>>();
+        positions.push(self.head.position.clone());
+
+        let min_x = positions.iter().map(|p| p.x).min().unwrap();
+        let max_x = positions.iter().map(|p| p.x).max().unwrap();
+        let min_y = positions.iter().map(|p| p.y).min().unwrap();
+        let max_y = positions.iter().map(|p| p.y).max().unwrap();
+
+        let last_tail = self.tails.last().unwrap();
+
+        for y in (min_y..=max_y).rev() {
+            for x in min_x..=max_x {
+                let position = Position { x, y };
+                if position == self.head.position {
+                    write!(f, "{}", self.head.name)?;
+                } else if let Some(tail) = self.tails.iter().find(|t| t.position == position) {
+                    write!(f, "{}", tail.name)?;
+                } else if last_tail.visited.contains(&position) {
+                    write!(f, "#")?;
+                } else {
+                    write!(f, ".")?;
+                }
+            }
+            writeln!(f)?;
+        }
+        Ok(())
     }
 }
 
 pub fn day9() -> eyre::Result<()> {
     let motions: Motions = include_str!("../data/day9.txt").parse()?;
     {
-        let mut s = BoardState::new();
+        let mut s = BoardState::new(1);
         s.do_moves(&motions);
         println!("Day 9.1: {}", s.visited_positions());
     }
-    // {
-    //     let distance = ViewingDistance::compute(&forest)?;
-    //     println!(
-    //         "Day 8.2: {}",
-    //         distance.get_max().ok_or_else(|| eyre!("No max ?"))?
-    //     );
-    // }
+    {
+        let mut s = BoardState::new(9);
+        s.do_moves(&motions);
+        println!("Day 9.2: {}", s.visited_positions());
+    }
     Ok(())
 }
 
@@ -219,108 +291,239 @@ R 2"#;
 
     #[test]
     fn adjust_tail_h() {
-        let mut s = BoardState::new();
-        s.head = Position { x: 1, y: 0 };
+        let mut s = BoardState::new(1);
+        s.head.position = Position { x: 1, y: 0 };
         s.adjust_tail_after_one_step();
-        assert_eq!(s.tail, Position { x: 0, y: 0 });
+        assert_eq!(s.tails.last().unwrap().position, Position { x: 0, y: 0 });
 
-        s.head = Position { x: 2, y: 0 };
+        s.head.position = Position { x: 2, y: 0 };
         s.adjust_tail_after_one_step();
-        assert_eq!(s.tail, Position { x: 1, y: 0 });
+        assert_eq!(s.tails.last().unwrap().position, Position { x: 1, y: 0 });
 
-        s.head = Position { x: -5, y: 0 };
+        s.head.position = Position { x: -5, y: 0 };
         s.adjust_tail_after_one_step();
-        assert_eq!(s.tail, Position { x: -4, y: 0 });
+        assert_eq!(s.tails.last().unwrap().position, Position { x: -4, y: 0 });
 
-        assert_eq!(s.visited_by_tail.len(), 6);
-        assert!(s.visited_by_tail.contains(&Position { x: 0, y: 0 }));
-        assert!(s.visited_by_tail.contains(&Position { x: 1, y: 0 }));
-        assert!(s.visited_by_tail.contains(&Position { x: -1, y: 0 }));
-        assert!(s.visited_by_tail.contains(&Position { x: -2, y: 0 }));
-        assert!(s.visited_by_tail.contains(&Position { x: -3, y: 0 }));
-        assert!(s.visited_by_tail.contains(&Position { x: -4, y: 0 }));
+        assert_eq!(s.tails.last().unwrap().visited.len(), 6);
+        assert!(s
+            .tails
+            .last()
+            .unwrap()
+            .visited
+            .contains(&Position { x: 0, y: 0 }));
+        assert!(s
+            .tails
+            .last()
+            .unwrap()
+            .visited
+            .contains(&Position { x: 1, y: 0 }));
+        assert!(s
+            .tails
+            .last()
+            .unwrap()
+            .visited
+            .contains(&Position { x: -1, y: 0 }));
+        assert!(s
+            .tails
+            .last()
+            .unwrap()
+            .visited
+            .contains(&Position { x: -2, y: 0 }));
+        assert!(s
+            .tails
+            .last()
+            .unwrap()
+            .visited
+            .contains(&Position { x: -3, y: 0 }));
+        assert!(s
+            .tails
+            .last()
+            .unwrap()
+            .visited
+            .contains(&Position { x: -4, y: 0 }));
     }
 
     #[test]
     fn adjust_tail_v() {
-        let mut s = BoardState::new();
-        s.head = Position { x: 0, y: 1 };
+        let mut s = BoardState::new(1);
+        s.head.position = Position { x: 0, y: 1 };
         s.adjust_tail_after_one_step();
-        assert_eq!(s.tail, Position { x: 0, y: 0 });
+        assert_eq!(s.tails.last().unwrap().position, Position { x: 0, y: 0 });
 
-        s.head = Position { x: 0, y: 2 };
+        s.head.position = Position { x: 0, y: 2 };
         s.adjust_tail_after_one_step();
-        assert_eq!(s.tail, Position { x: 0, y: 1 });
+        assert_eq!(s.tails.last().unwrap().position, Position { x: 0, y: 1 });
 
-        s.head = Position { x: 0, y: -5 };
+        s.head.position = Position { x: 0, y: -5 };
         s.adjust_tail_after_one_step();
-        assert_eq!(s.tail, Position { x: 0, y: -4 });
+        assert_eq!(s.tails.last().unwrap().position, Position { x: 0, y: -4 });
 
-        assert_eq!(s.visited_by_tail.len(), 6);
-        assert!(s.visited_by_tail.contains(&Position { x: 0, y: 0 }));
-        assert!(s.visited_by_tail.contains(&Position { x: 0, y: 1 }));
-        assert!(s.visited_by_tail.contains(&Position { x: 0, y: -1 }));
-        assert!(s.visited_by_tail.contains(&Position { x: 0, y: -2 }));
-        assert!(s.visited_by_tail.contains(&Position { x: 0, y: -3 }));
-        assert!(s.visited_by_tail.contains(&Position { x: 0, y: -4 }));
+        assert_eq!(s.tails.last().unwrap().visited.len(), 6);
+        assert!(s
+            .tails
+            .last()
+            .unwrap()
+            .visited
+            .contains(&Position { x: 0, y: 0 }));
+        assert!(s
+            .tails
+            .last()
+            .unwrap()
+            .visited
+            .contains(&Position { x: 0, y: 1 }));
+        assert!(s
+            .tails
+            .last()
+            .unwrap()
+            .visited
+            .contains(&Position { x: 0, y: -1 }));
+        assert!(s
+            .tails
+            .last()
+            .unwrap()
+            .visited
+            .contains(&Position { x: 0, y: -2 }));
+        assert!(s
+            .tails
+            .last()
+            .unwrap()
+            .visited
+            .contains(&Position { x: 0, y: -3 }));
+        assert!(s
+            .tails
+            .last()
+            .unwrap()
+            .visited
+            .contains(&Position { x: 0, y: -4 }));
     }
 
     #[test]
     fn adjust_tail_d() {
-        let mut s = BoardState::new();
-        s.head = Position { x: 1, y: 1 };
+        let mut s = BoardState::new(1);
+        s.head.position = Position { x: 1, y: 1 };
         s.adjust_tail_after_one_step();
-        assert_eq!(s.tail, Position { x: 0, y: 0 });
+        assert_eq!(s.tails.last().unwrap().position, Position { x: 0, y: 0 });
 
-        s.head = Position { x: 2, y: 2 };
+        s.head.position = Position { x: 2, y: 2 };
         s.adjust_tail_after_one_step();
-        assert_eq!(s.tail, Position { x: 1, y: 1 });
+        assert_eq!(s.tails.last().unwrap().position, Position { x: 1, y: 1 });
 
-        s.head = Position { x: -5, y: -5 };
+        s.head.position = Position { x: -5, y: -5 };
         s.adjust_tail_after_one_step();
-        assert_eq!(s.tail, Position { x: -4, y: -4 });
+        assert_eq!(s.tails.last().unwrap().position, Position { x: -4, y: -4 });
 
-        assert_eq!(s.visited_by_tail.len(), 6);
-        assert!(s.visited_by_tail.contains(&Position { x: 0, y: 0 }));
-        assert!(s.visited_by_tail.contains(&Position { x: 1, y: 1 }));
-        assert!(s.visited_by_tail.contains(&Position { x: -1, y: -1 }));
-        assert!(s.visited_by_tail.contains(&Position { x: -2, y: -2 }));
-        assert!(s.visited_by_tail.contains(&Position { x: -3, y: -3 }));
-        assert!(s.visited_by_tail.contains(&Position { x: -4, y: -4 }));
+        assert_eq!(s.tails.last().unwrap().visited.len(), 6);
+        assert!(s
+            .tails
+            .last()
+            .unwrap()
+            .visited
+            .contains(&Position { x: 0, y: 0 }));
+        assert!(s
+            .tails
+            .last()
+            .unwrap()
+            .visited
+            .contains(&Position { x: 1, y: 1 }));
+        assert!(s
+            .tails
+            .last()
+            .unwrap()
+            .visited
+            .contains(&Position { x: -1, y: -1 }));
+        assert!(s
+            .tails
+            .last()
+            .unwrap()
+            .visited
+            .contains(&Position { x: -2, y: -2 }));
+        assert!(s
+            .tails
+            .last()
+            .unwrap()
+            .visited
+            .contains(&Position { x: -3, y: -3 }));
+        assert!(s
+            .tails
+            .last()
+            .unwrap()
+            .visited
+            .contains(&Position { x: -4, y: -4 }));
     }
 
     #[test]
     fn adjust_tail_d2() {
-        let mut s = BoardState::new();
-        s.head = Position { x: 2, y: 2 };
-        s.tail = Position { x: 1, y: 1 };
+        let mut s = BoardState::new(1);
+        s.do_move(&Motion {
+            direction: Direction::Right,
+            distance: 1,
+        });
         s.do_move(&Motion {
             direction: Direction::Up,
             distance: 1,
         });
-        s.adjust_tail_after_one_step();
-        assert_eq!(s.tail, Position { x: 2, y: 2 });
+        s.do_move(&Motion {
+            direction: Direction::Right,
+            distance: 1,
+        });
+        s.do_move(&Motion {
+            direction: Direction::Up,
+            distance: 1,
+        });
+
+        s.do_move(&Motion {
+            direction: Direction::Up,
+            distance: 1,
+        });
+        assert_eq!(s.tails.last().unwrap().position, Position { x: 2, y: 2 });
     }
 
     #[test]
     fn adjust_tail_d3() {
-        let mut s = BoardState::new();
-        s.head = Position { x: 2, y: 2 };
-        s.tail = Position { x: 1, y: 1 };
+        let mut s = BoardState::new(1);
+        s.head.position = Position { x: 2, y: 2 };
+        s.tails.last_mut().unwrap().position = Position { x: 1, y: 1 };
         s.do_move(&Motion {
             direction: Direction::Right,
             distance: 1,
         });
         s.adjust_tail_after_one_step();
-        assert_eq!(s.tail, Position { x: 2, y: 2 });
+        assert_eq!(s.tails.last().unwrap().position, Position { x: 2, y: 2 });
     }
 
     #[test]
     fn part_1() {
         let motions: Motions = TEST_VECTOR.parse().unwrap();
-        let mut s = BoardState::new();
+        let mut s = BoardState::new(1);
         s.do_moves(&motions);
 
         assert_eq!(s.visited_positions(), 13);
+    }
+
+    #[test]
+    fn part_2_1() {
+        let motions: Motions = TEST_VECTOR.parse().unwrap();
+        let mut s = BoardState::new(10);
+        s.do_moves(&motions);
+
+        assert_eq!(s.visited_positions(), 1);
+    }
+
+    static TEST_VECTOR_BIG: &str = r#"R 5
+U 8
+L 8
+D 3
+R 17
+D 10
+L 25
+U 20"#;
+
+    #[test]
+    fn part_2_2() {
+        let motions: Motions = TEST_VECTOR_BIG.parse().unwrap();
+        let mut s = BoardState::new(9);
+        s.do_moves(&motions);
+
+        assert_eq!(s.visited_positions(), 36);
     }
 }

@@ -1,5 +1,4 @@
 use std::fmt::Display;
-use std::iter::Flatten;
 use std::num::ParseIntError;
 use std::str::FromStr;
 
