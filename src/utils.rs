@@ -140,7 +140,7 @@ where
             0 => Ok(result),
             _ => bail!("Input not fully consumed, remains: {:?}", s),
         },
-        Err(nom::Err::Error(e)) | Err(nom::Err::Failure(e)) => Err(eyre!(e.to_string())),
+        Err(nom::Err::Error(e) | nom::Err::Failure(e)) => Err(eyre!(e.to_string())),
         Err(nom::Err::Incomplete(_)) => Err(eyre!("Incomplete input")),
     }
 }

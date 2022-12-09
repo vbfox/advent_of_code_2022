@@ -61,7 +61,7 @@ impl FromStr for Motion {
         let (direction, distance) = s
             .split_whitespace()
             .collect_tuple()
-            .ok_or_else(|| eyre!("Invalid motion: {}", s))?; // TODO: use split_once when stable
+            .ok_or_else(|| eyre!("Invalid motion: {}", s))?;
         let direction = direction.parse()?;
         let distance = distance.parse()?;
         Ok(Motion {
@@ -77,10 +77,7 @@ impl FromStr for Motions {
     type Err = eyre::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let motions = s
-            .lines()
-            .map(|s| s.parse())
-            .collect::<Result<Vec<_>, _>>()?;
+        let motions = s.lines().map(str::parse).collect::<Result<Vec<_>, _>>()?;
         Ok(Motions(motions))
     }
 }
@@ -182,7 +179,7 @@ impl BoardState {
     pub fn new(tail_count: usize) -> Self {
         let tail = Position { x: 0, y: 0 };
         let mut visited_by_tail = HashSet::new();
-        visited_by_tail.insert(tail.clone());
+        visited_by_tail.insert(tail);
 
         let mut tails = Vec::new();
         for i in 0..tail_count {
@@ -199,7 +196,7 @@ impl BoardState {
 
     fn adjust_tail_after_one_step(&mut self) {
         let mut current = &self.head;
-        for tail in self.tails.iter_mut() {
+        for tail in &mut self.tails {
             tail.follow(&current.position);
             // println!("Moved tail {} to {}", tail.name, tail.position);
             current = tail;

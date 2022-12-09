@@ -9,5 +9,5 @@ run:
 test:
     cargo nextest run
 
-clippy:
-    cargo clippy --all-targets --all-features --tests --benches
+clippy *ARGS:
+    cargo clippy --all-targets --all-features --tests --benches {{ARGS}}
