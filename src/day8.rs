@@ -1,6 +1,7 @@
 use std::fmt::Display;
 use std::num::ParseIntError;
 use std::str::FromStr;
+use std::time::Instant;
 
 use eyre::bail;
 use eyre::eyre;
@@ -265,14 +266,21 @@ impl Display for TreeVisibility {
 pub fn day8() -> eyre::Result<()> {
     let forest: Forest = include_str!("../data/day8.txt").parse()?;
     {
+        let start = Instant::now();
         let visibility = TreeVisibility::compute(&forest)?;
-        println!("Day 8.1: {}", visibility.count_visible());
+        println!(
+            "Day 8.1: {} ({:?})",
+            visibility.count_visible(),
+            start.elapsed()
+        );
     }
     {
+        let start = Instant::now();
         let distance = ViewingDistance::compute(&forest)?;
         println!(
-            "Day 8.2: {}",
-            distance.get_max().ok_or_else(|| eyre!("No max ?"))?
+            "Day 8.2: {} ({:?})",
+            distance.get_max().ok_or_else(|| eyre!("No max ?"))?,
+            start.elapsed()
         );
     }
     Ok(())
