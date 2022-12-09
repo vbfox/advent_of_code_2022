@@ -1,5 +1,7 @@
 # Advent of Code 2022
 
+<img src="tree.svg">
+
 Tools used:
 * [just](https://github.com/casey/just) to run commands
 * [cargo-nextest](https://nexte.st/) as test runner
