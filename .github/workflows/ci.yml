@@ -16,11 +16,8 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         name: Git checkout
-      - uses: dtolnay/rust-toolchain@1.70.0
-        name: Toolchain
-        with:
-          toolchain: nightly-2022-12-06
-          components: clippy, rustfmt
+      - name: Toolchain
+        run: rustup show
       - uses: Swatinem/rust-cache@v2
         name: Cache
       - name: Clippy
@@ -38,10 +35,8 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         name: Git checkout
-      - uses: dtolnay/rust-toolchain@1.70.0
-        name: Toolchain
-        with:
-          toolchain: nightly-2022-12-06
+      - name: Toolchain
+        run: rustup show
       - uses: Swatinem/rust-cache@v2
         name: Cache
       - name: Build
@@ -53,10 +48,8 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         name: Git checkout
-      - uses: dtolnay/rust-toolchain@1.70.0
-        name: Toolchain
-        with:
-          toolchain: nightly-2022-12-06
+      - name: Toolchain
+        run: rustup show
       - uses: Swatinem/rust-cache@v2
         name: Cache
       - uses: taiki-e/install-action@v1
