@@ -9,7 +9,8 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  check:
+  checks:
+    name: Checks
     runs-on: ubuntu-latest
 
     steps:
@@ -20,12 +21,15 @@ jobs:
           toolchain: nightly-2022-12-06
           components: clippy, rustfmt
       - uses: Swatinem/rust-cache@v2
-      - name: Check
+      - name: Clippy
         run: cargo clippy --all-targets --all-features --tests --benches
-      - name: Run tests
-        run: cargo test --verbose
+      - uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --all -- --check
 
   build:
+    name: Build
     runs-on: ubuntu-latest
 
     steps:
@@ -53,19 +57,3 @@ jobs:
           tool: cargo-nextest
       - name: Test
         run: cargo nextest run
-
-  fmt:
-    name: Rustfmt
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: rust-toolchain
-        uses: dtolnay/rust-toolchain@1.70.0
-        with:
-          toolchain: nightly-2022-12-06
-          components: rustfmt
-      - uses: Swatinem/rust-cache@v2
-      - uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: --all -- --check
