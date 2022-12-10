@@ -19,6 +19,7 @@ jobs:
         with:
           toolchain: nightly-2022-12-06
           components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
       - name: Check
         run: cargo clippy --all-targets --all-features --tests --benches
       - name: Run tests
@@ -33,6 +34,7 @@ jobs:
         uses: dtolnay/rust-toolchain@1.70.0
         with:
           toolchain: nightly-2022-12-06
+      - uses: Swatinem/rust-cache@v2
       - name: Build
         run: cargo build --verbose --release
 
@@ -45,6 +47,7 @@ jobs:
         uses: dtolnay/rust-toolchain@1.70.0
         with:
           toolchain: nightly-2022-12-06
+      - uses: Swatinem/rust-cache@v2
       - uses: taiki-e/install-action@v1
         with:
           tool: cargo-nextest
@@ -61,6 +64,7 @@ jobs:
         with:
           toolchain: nightly-2022-12-06
           components: rustfmt
+      - uses: Swatinem/rust-cache@v2
       - uses: actions-rs/cargo@v1
         with:
           command: fmt
