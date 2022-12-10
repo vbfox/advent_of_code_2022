@@ -15,9 +15,9 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: rust-toolchain
-        uses: actions-rs/toolchain@v1.0.6
+        uses: dtolnay/rust-toolchain@1.70.0
         with:
-          override: true
+          toolchain: nightly-2022-12-06
           components: clippy, rustfmt
       - name: Check
         run: cargo clippy --all-targets --all-features --tests --benches
@@ -30,9 +30,9 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: rust-toolchain
-        uses: actions-rs/toolchain@v1.0.6
+        uses: dtolnay/rust-toolchain@1.70.0
         with:
-          override: true
+          toolchain: nightly-2022-12-06
       - name: Build
         run: cargo build --verbose --release
 
@@ -41,9 +41,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
+      - name: rust-toolchain
+        uses: dtolnay/rust-toolchain@1.70.0
         with:
-          override: true
+          toolchain: nightly-2022-12-06
       - uses: taiki-e/install-action@v1
         with:
           tool: cargo-nextest
@@ -55,9 +56,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
+      - name: rust-toolchain
+        uses: dtolnay/rust-toolchain@1.70.0
         with:
-          override: true
+          toolchain: nightly-2022-12-06
           components: rustfmt
       - uses: actions-rs/cargo@v1
         with:
