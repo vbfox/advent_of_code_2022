@@ -15,15 +15,18 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - name: rust-toolchain
-        uses: dtolnay/rust-toolchain@1.70.0
+        name: Git checkout
+      - uses: dtolnay/rust-toolchain@1.70.0
+        name: Toolchain
         with:
           toolchain: nightly-2022-12-06
           components: clippy, rustfmt
       - uses: Swatinem/rust-cache@v2
+        name: Cache
       - name: Clippy
         run: cargo clippy --all-targets --all-features --tests --benches
       - uses: actions-rs/cargo@v1
+        name: Fmt
         with:
           command: fmt
           args: --all -- --check
@@ -34,11 +37,13 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - name: rust-toolchain
-        uses: dtolnay/rust-toolchain@1.70.0
+        name: Git checkout
+      - uses: dtolnay/rust-toolchain@1.70.0
+        name: Toolchain
         with:
           toolchain: nightly-2022-12-06
       - uses: Swatinem/rust-cache@v2
+        name: Cache
       - name: Build
         run: cargo build --verbose --release
 
@@ -47,11 +52,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: rust-toolchain
-        uses: dtolnay/rust-toolchain@1.70.0
+        name: Git checkout
+      - uses: dtolnay/rust-toolchain@1.70.0
+        name: Toolchain
         with:
           toolchain: nightly-2022-12-06
       - uses: Swatinem/rust-cache@v2
+        name: Cache
       - uses: taiki-e/install-action@v1
         with:
           tool: cargo-nextest
