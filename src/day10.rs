@@ -1,4 +1,8 @@
-use std::str::FromStr;
+use ansi_term::Color;
+use std::{
+    fmt::{Display, Formatter},
+    str::FromStr,
+};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 enum Instruction {
@@ -114,6 +118,69 @@ impl Signal {
     }
 }
 
+const SCREEN_WIDTH: usize = 40;
+
+struct Screen(Vec<Vec<char>>);
+
+impl Screen {
+    fn new() -> Self {
+        Self(Vec::new())
+    }
+
+    fn horizontal_position(&self) -> usize {
+        let raw_pos = self.0.last().map(|line| line.len()).unwrap_or(0);
+        if raw_pos >= SCREEN_WIDTH {
+            0
+        } else {
+            raw_pos
+        }
+    }
+
+    fn draw(&mut self, c: char) {
+        let mut line: Option<&mut Vec<char>> = None;
+        if let Some(last_line) = self.0.last_mut() {
+            if last_line.len() < SCREEN_WIDTH {
+                line = Some(last_line);
+            }
+        }
+
+        if line.is_none() {
+            self.0.push(Vec::new());
+            line = self.0.last_mut();
+        }
+
+        let line = line.expect("line should be Some");
+        line.push(c);
+    }
+
+    fn sprite_is_visible(&self, center: i32, width: i32) -> bool {
+        let left = center - width / 2;
+        let right = center + width / 2;
+        let current_pos = self.horizontal_position() as i32;
+        current_pos >= left && current_pos <= right
+    }
+
+    fn draw_sprite(&mut self, center: i32, width: i32) {
+        if self.sprite_is_visible(center, width) {
+            self.draw('#');
+        } else {
+            self.draw('.');
+        }
+    }
+}
+
+impl Display for Screen {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        for line in &self.0 {
+            for c in line {
+                write!(f, "{}", c)?;
+            }
+            writeln!(f)?;
+        }
+        Ok(())
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct MatchineState {
     x: i32,
@@ -141,9 +208,7 @@ impl MatchineState {
         }
     }
 
-    fn step(&mut self) -> Sample {
-        let x_for_cycle = self.x;
-
+    fn step(&mut self) {
         // Start executing an instruction if we are not already executing one
         if self.current_instruction.is_none() && self.pc < self.instructions.len() {
             let instruction = self.instructions[self.pc];
@@ -160,8 +225,6 @@ impl MatchineState {
         }
 
         self.cycle += 1;
-
-        Sample::new(self.cycle, x_for_cycle)
     }
 
     fn is_running(&self) -> bool {
@@ -173,20 +236,44 @@ impl MatchineState {
         x_values.reserve(self.instructions.len());
 
         while self.is_running() {
-            x_values.push(self.step());
+            let x_for_cycle = self.x;
+            self.step();
+            x_values.push(Sample::new(self.cycle, x_for_cycle));
         }
 
         Signal::new(x_values)
+    }
+
+    fn run_and_draw(&mut self) -> Screen {
+        let mut screen = Screen::new();
+
+        while self.is_running() {
+            let x = self.x;
+            self.step();
+            screen.draw_sprite(x, 3);
+        }
+
+        screen
     }
 }
 
 pub fn day10() -> eyre::Result<()> {
     let instructions = parse_instructions(include_str!("../data/day10.txt"))?;
     {
-        let mut state = MatchineState::new(instructions);
+        let mut state = MatchineState::new(instructions.clone());
         let signal = state.run();
         let result = signal.signal_strength();
-        println!("Day 10 Part 1: {}", result);
+        println!("Day 10.1: {}", result);
+    }
+    {
+        let mut state = MatchineState::new(instructions.clone());
+        let screen = state.run_and_draw();
+        let nice_output = screen
+            .to_string()
+            .replace('.', " ")
+            .replace('#', &Color::Yellow.paint("█").to_string());
+        println!("Day 10.2:");
+        println!("{}", nice_output);
     }
     Ok(())
 }
@@ -351,23 +438,23 @@ noop"#;
             Instruction::AddX(-5),
         ];
         let mut state = MatchineState::new(instructions);
-        assert_eq!(state.step(), Sample::new(1, 1));
+        state.step();
         assert_eq!(state.x, 1);
         assert_eq!(state.pc, 1);
         assert_eq!(state.cycle, 1);
-        assert_eq!(state.step().x, 1);
+        state.step();
         assert_eq!(state.x, 1);
         assert_eq!(state.pc, 1);
         assert_eq!(state.cycle, 2);
-        assert_eq!(state.step().x, 1);
+        state.step();
         assert_eq!(state.x, 4);
         assert_eq!(state.pc, 2);
         assert_eq!(state.cycle, 3);
-        assert_eq!(state.step().x, 4);
+        state.step();
         assert_eq!(state.x, 4);
         assert_eq!(state.pc, 2);
         assert_eq!(state.cycle, 4);
-        assert_eq!(state.step().x, 4);
+        state.step();
         assert_eq!(state.x, -1);
         assert_eq!(state.pc, 3);
         assert_eq!(state.cycle, 5);
@@ -388,5 +475,20 @@ noop"#;
         assert_eq!(interesting[4].signal_strength(), 2880);
         assert_eq!(interesting[5].signal_strength(), 3960);
         assert_eq!(signal.signal_strength(), 13140);
+    }
+
+    #[test]
+    fn part_2() {
+        let instructions = parse_instructions(TEST_VECTOR).unwrap();
+        let mut state = MatchineState::new(instructions);
+        let screen = state.run_and_draw();
+        let expected = r#"##..##..##..##..##..##..##..##..##..##..
+###...###...###...###...###...###...###.
+####....####....####....####....####....
+#####.....#####.....#####.....#####.....
+######......######......######......####
+#######.......#######.......#######.....
+"#;
+        assert_eq!(screen.to_string(), expected);
     }
 }
