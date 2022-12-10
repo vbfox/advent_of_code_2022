@@ -155,7 +155,7 @@ impl TreeVisibility {
 
     #[allow(dead_code)]
     fn get(&self, row: usize, col: usize) -> Option<bool> {
-        self.is_visible.get(row, col)
+        self.is_visible.get(row, col).copied()
     }
 
     pub fn count_visible(&self) -> usize {
@@ -239,7 +239,7 @@ impl ViewingDistance {
 
     #[allow(dead_code)]
     fn get(&self, row: usize, col: usize) -> Option<usize> {
-        self.distance.get(row, col)
+        self.distance.get(row, col).copied()
     }
 
     pub fn get_max(&self) -> Option<usize> {
