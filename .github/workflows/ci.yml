@@ -10,10 +10,6 @@ env:
 
 jobs:
   check:
-    strategy:
-      fail-fast: false
-      matrix:
-        rust: [1.65.0]
     runs-on: ubuntu-latest
 
     steps:
@@ -21,8 +17,6 @@ jobs:
       - name: rust-toolchain
         uses: actions-rs/toolchain@v1.0.6
         with:
-          profile: minimal
-          toolchain: ${{ matrix.rust }}
           override: true
           components: clippy, rustfmt
       - name: Check
@@ -31,9 +25,6 @@ jobs:
         run: cargo test --verbose
 
   build:
-    strategy:
-      matrix:
-        rust: [1.65.0]
     runs-on: ubuntu-latest
 
     steps:
@@ -41,8 +32,6 @@ jobs:
       - name: rust-toolchain
         uses: actions-rs/toolchain@v1.0.6
         with:
-          profile: minimal
-          toolchain: ${{ matrix.rust }}
           override: true
       - name: Build
         run: cargo build --verbose --release
@@ -50,15 +39,10 @@ jobs:
   test:
     name: Tests
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        rust: [1.65.0]
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
-          profile: minimal
-          toolchain: ${{ matrix.rust }}
           override: true
       - uses: taiki-e/install-action@v1
         with:
@@ -69,15 +53,10 @@ jobs:
   fmt:
     name: Rustfmt
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        rust: [1.65.0]
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
-          profile: minimal
-          toolchain: ${{ matrix.rust }}
           override: true
           components: rustfmt
       - uses: actions-rs/cargo@v1
