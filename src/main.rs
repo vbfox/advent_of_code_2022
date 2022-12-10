@@ -2,6 +2,7 @@
 #![feature(iter_advance_by)]
 
 use color_eyre::eyre::Result;
+use yansi::Paint;
 
 mod utils;
 
@@ -31,10 +32,20 @@ fn previous_days() -> Result<()> {
     Ok(())
 }
 
-fn main() -> Result<()> {
+fn setup() -> Result<()> {
     color_eyre::install()?;
 
+    if cfg!(windows) && !Paint::enable_windows_ascii() {
+        Paint::disable();
+    }
+
+    Ok(())
+}
+
+fn main() -> Result<()> {
+    setup()?;
     previous_days()?;
+
     day10::day10()?;
 
     Ok(())

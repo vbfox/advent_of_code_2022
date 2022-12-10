@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-ansi_term = "0.12.1"
+yansi = "0.5"
 color-eyre = { version = "0.6", default-features = false }
 eyre = "0.6"
 itertools = "0.10"

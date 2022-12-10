@@ -1,8 +1,8 @@
-use ansi_term::Color;
 use std::{
     fmt::{Display, Formatter},
     str::FromStr,
 };
+use yansi::Paint;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 enum Instruction {
@@ -270,7 +270,7 @@ pub fn day10() -> eyre::Result<()> {
         let nice_output = screen
             .to_string()
             .replace('.', " ")
-            .replace('#', &Color::Yellow.paint("█"));
+            .replace('#', &Paint::yellow("█").to_string());
         println!("Day 10.2:");
         println!("{nice_output}");
     }
