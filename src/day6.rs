@@ -37,11 +37,11 @@ pub fn day6() -> eyre::Result<()> {
 
     {
         let marker = find_marker(&text, 4).ok_or_else(|| eyre!("No marker found"))?;
-        println!("Day 6.1: {}", marker);
+        println!("Day 6.1: {marker}");
     }
     {
         let marker = find_marker(&text, 14).ok_or_else(|| eyre!("No marker found"))?;
-        println!("Day 6.2: {}", marker);
+        println!("Day 6.2: {marker}");
     }
 
     Ok(())

@@ -102,12 +102,12 @@ pub fn day4() -> eyre::Result<()> {
 
     {
         let count = lines.iter().filter(|l| l.fully_contains()).count();
-        println!("Day 4.1: {}", count);
+        println!("Day 4.1: {count}");
     }
 
     {
         let count = lines.iter().filter(|l| l.overlaps()).count();
-        println!("Day 4.2: {}", count);
+        println!("Day 4.2: {count}");
     }
 
     Ok(())

@@ -126,7 +126,7 @@ pub fn day1() -> eyre::Result<()> {
 
     let max_3_elves_calories: Calories = elves.iter().take(3).map(Elf::total_calories).sum();
 
-    println!("Day 1.2: {}", max_3_elves_calories);
+    println!("Day 1.2: {max_3_elves_calories}");
 
     Ok(())
 }

@@ -11,8 +11,8 @@ enum Instruction {
 }
 
 impl Instruction {
-    fn cycles(&self) -> usize {
-        match &self {
+    fn cycles(self) -> usize {
+        match self {
             Self::Noop => 1,
             Self::AddX(_) => 2,
         }
@@ -27,13 +27,13 @@ impl FromStr for Instruction {
 
         match (parts.next(), parts.next(), parts.next()) {
             (Some(instr), None, None) => match instr {
-                "noop" => return Ok(Self::Noop),
+                "noop" => Ok(Self::Noop),
                 _ => return Err(eyre::eyre!("Unknown instruction: {}", instr)),
             },
             (Some(instr), Some(param), None) => match instr {
                 "addx" => {
                     let value = param.parse::<i32>()?;
-                    return Ok(Self::AddX(value));
+                    Ok(Self::AddX(value))
                 }
                 _ => return Err(eyre::eyre!("Unknown instruction: {}", instr)),
             },
@@ -43,10 +43,7 @@ impl FromStr for Instruction {
 }
 
 fn parse_instructions(input: &str) -> eyre::Result<Vec<Instruction>> {
-    input
-        .lines()
-        .map(|line| line.parse::<Instruction>())
-        .collect::<Result<Vec<_>, _>>()
+    input.lines().map(str::parse).collect::<Result<Vec<_>, _>>()
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -76,6 +73,7 @@ impl Sample {
         Self { cycle, x }
     }
 
+    #[allow(clippy::cast_possible_truncation, clippy::cast_possible_wrap)]
     fn signal_strength(&self) -> i32 {
         self.cycle as i32 * self.x
     }
@@ -128,7 +126,7 @@ impl Screen {
     }
 
     fn horizontal_position(&self) -> usize {
-        let raw_pos = self.0.last().map(|line| line.len()).unwrap_or(0);
+        let raw_pos = self.0.last().map_or(0, std::vec::Vec::len);
         if raw_pos >= SCREEN_WIDTH {
             0
         } else {
@@ -153,6 +151,7 @@ impl Screen {
         line.push(c);
     }
 
+    #[allow(clippy::cast_possible_truncation, clippy::cast_possible_wrap)]
     fn sprite_is_visible(&self, center: i32, width: i32) -> bool {
         let left = center - width / 2;
         let right = center + width / 2;
@@ -173,7 +172,7 @@ impl Display for Screen {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         for line in &self.0 {
             for c in line {
-                write!(f, "{}", c)?;
+                write!(f, "{c}")?;
             }
             writeln!(f)?;
         }
@@ -263,17 +262,17 @@ pub fn day10() -> eyre::Result<()> {
         let mut state = MatchineState::new(instructions.clone());
         let signal = state.run();
         let result = signal.signal_strength();
-        println!("Day 10.1: {}", result);
+        println!("Day 10.1: {result}");
     }
     {
-        let mut state = MatchineState::new(instructions.clone());
+        let mut state = MatchineState::new(instructions);
         let screen = state.run_and_draw();
         let nice_output = screen
             .to_string()
             .replace('.', " ")
-            .replace('#', &Color::Yellow.paint("█").to_string());
+            .replace('#', &Color::Yellow.paint("█"));
         println!("Day 10.2:");
-        println!("{}", nice_output);
+        println!("{nice_output}");
     }
     Ok(())
 }

@@ -68,7 +68,7 @@ struct Compartment {
 impl Display for Compartment {
     fn fmt(&self, f: &mut Formatter) -> Result<(), fmt::Error> {
         for item in &self.items {
-            write!(f, "{}", item)?;
+            write!(f, "{item}")?;
         }
         Ok(())
     }
@@ -231,7 +231,7 @@ pub fn day3() -> eyre::Result<()> {
             .map(RuckSack::priority)
             .collect::<Result<Vec<_>, _>>()?;
         let total = priorities.iter().sum::<u32>();
-        println!("Day 3.1: {}", total);
+        println!("Day 3.1: {total}");
     }
     {
         let groups = get_groups(&rucksacks)?;
@@ -241,7 +241,7 @@ pub fn day3() -> eyre::Result<()> {
             .map(Group::priority)
             .collect::<Result<Vec<_>, _>>()?;
         let total = priorities.iter().sum::<u32>();
-        println!("Day 3.2: {}", total);
+        println!("Day 3.2: {total}");
     }
     Ok(())
 }

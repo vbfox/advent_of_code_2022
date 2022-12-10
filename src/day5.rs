@@ -90,7 +90,7 @@ impl Display for CrateRow {
             }
 
             match c {
-                Some(c) => write!(f, "{}", c)?,
+                Some(c) => write!(f, "{c}")?,
                 None => write!(f, "   ")?,
             }
         }

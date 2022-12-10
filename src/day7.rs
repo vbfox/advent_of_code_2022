@@ -189,7 +189,7 @@ pub fn day7() -> eyre::Result<()> {
         let (_, to_delete_size) = sizes
             .find_dir_to_delete(70_000_000, 30_000_000)
             .ok_or_else(|| eyre!("No dir to delete"))?;
-        println!("Day 7.2: {:?}", to_delete_size);
+        println!("Day 7.2: {to_delete_size:?}");
     }
 
     Ok(())

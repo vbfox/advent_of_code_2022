@@ -244,7 +244,7 @@ pub fn day2() -> eyre::Result<()> {
         let scores = lines.iter().map(StrategyLine::score).collect::<Vec<_>>();
         let total_score = scores.iter().sum::<i32>();
 
-        println!("Day 2.1: {}", total_score);
+        println!("Day 2.1: {total_score}");
     }
 
     {
@@ -252,7 +252,7 @@ pub fn day2() -> eyre::Result<()> {
         let scores = lines.iter().map(StrategyLineV2::score).collect::<Vec<_>>();
         let total_score = scores.iter().sum::<i32>();
 
-        println!("Day 2.2: {}", total_score);
+        println!("Day 2.2: {total_score}");
     }
 
     Ok(())
