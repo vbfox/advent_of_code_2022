@@ -1,10 +1,12 @@
 #![warn(clippy::all, clippy::pedantic)]
+#![feature(iter_advance_by)]
 
 use color_eyre::eyre::Result;
 
 mod utils;
 
 mod day1;
+mod day10;
 mod day2;
 mod day3;
 mod day4;
@@ -24,6 +26,7 @@ fn previous_days() -> Result<()> {
     day6::day6()?;
     day7::day7()?;
     day8::day8()?;
+    day9::day9()?;
 
     Ok(())
 }
@@ -32,7 +35,7 @@ fn main() -> Result<()> {
     color_eyre::install()?;
 
     previous_days()?;
-    day9::day9()?;
+    day10::day10()?;
 
     Ok(())
 }

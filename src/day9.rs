@@ -200,7 +200,6 @@ impl BoardState {
         let mut current = &self.head;
         for tail in &mut self.tails {
             tail.follow(current.position);
-            // println!("Moved tail {} to {}", tail.name, tail.position);
             current = tail;
         }
     }
