@@ -348,29 +348,6 @@ Monkey 3:
     }
 
     #[test]
-    fn round_not_borred() -> eyre::Result<()> {
-        let input: Input = TEST_INPUT.parse()?;
-        let mut state = State::new(input);
-        state.rounds(20, false);
-
-        let xxx = format!(
-            "==== Inspections {:?}",
-            state
-                .monkeys
-                .iter()
-                .map(|m| m.inspected_items)
-                .collect_vec()
-        );
-
-        assert_eq!(xxx, "");
-        assert_eq!(state.monkeys[0].items, vec![20, 23, 27, 26]);
-        assert_eq!(state.monkeys[1].items, vec![2080, 25, 167, 207, 401, 1046]);
-        assert_eq!(state.monkeys[2].items, vec![]);
-        assert_eq!(state.monkeys[3].items, vec![]);
-        Ok(())
-    }
-
-    #[test]
     fn part1() -> eyre::Result<()> {
         let input: Input = TEST_INPUT.parse()?;
         let mut state = State::new(input);
