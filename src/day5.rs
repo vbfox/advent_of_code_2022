@@ -10,24 +10,20 @@ use eyre::eyre;
 use nom::{
     branch::alt,
     bytes::complete::{tag, take},
-    character::complete::{digit1, newline},
-    combinator::{map, map_res, value},
+    character::complete::newline,
+    combinator::{map, value},
     multi::{many0, many1, separated_list0, separated_list1},
     sequence::{delimited, preceded, tuple},
     IResult,
 };
 
-use crate::utils::nom_finish;
+use crate::utils::{nom_finish, parse_usize};
 
 #[derive(Debug, Clone)]
 struct Instruction {
     amount: usize,
     from: usize,
     to: usize,
-}
-
-fn parse_usize(input: &str) -> IResult<&str, usize> {
-    map_res(digit1, str::parse)(input)
 }
 
 fn parse_instruction(input: &str) -> IResult<&str, Instruction> {

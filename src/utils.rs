@@ -1,7 +1,12 @@
+#![allow(dead_code)]
+
 use std::fmt::{self, Display};
 
 use eyre::{bail, eyre};
-use nom::{error::ParseError, InputLength, Parser};
+use nom::{
+    character::complete::digit1, combinator::map_res, error::ParseError, IResult, InputLength,
+    Parser,
+};
 
 mod vec2d;
 
@@ -144,4 +149,18 @@ where
         Err(nom::Err::Error(e) | nom::Err::Failure(e)) => Err(eyre!(e.to_string())),
         Err(nom::Err::Incomplete(_)) => Err(eyre!("Incomplete input")),
     }
+}
+
+// --------------------------------------------------------------------------
+
+pub fn parse_usize(input: &str) -> IResult<&str, usize> {
+    map_res(digit1, str::parse)(input)
+}
+
+pub fn parse_i32(input: &str) -> IResult<&str, i32> {
+    map_res(digit1, str::parse)(input)
+}
+
+pub fn parse_i64(input: &str) -> IResult<&str, i64> {
+    map_res(digit1, str::parse)(input)
 }

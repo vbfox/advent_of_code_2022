@@ -1,13 +1,13 @@
 set windows-shell := ["powershell.exe", "-NoLogo", "-Command"]
 
-build:
-    cargo build
+build *ARGS:
+    cargo build {{ARGS}}
 
-run:
-    cargo run
+run *ARGS:
+    cargo run {{ARGS}}
 
-test:
-    cargo nextest run
+test *ARGS:
+    cargo nextest run {{ARGS}}
 
 clippy *ARGS:
     cargo clippy --all-targets --all-features --tests --benches {{ARGS}}
