@@ -3,6 +3,7 @@ use std::{
     fs::File,
     io::{self, BufRead, BufReader},
     path::{Path, PathBuf},
+    time::Instant,
 };
 
 use eyre::eyre;
@@ -181,15 +182,22 @@ impl DirSizes {
 pub fn day7() -> eyre::Result<()> {
     let text = load_from_file("data/day7.txt")?;
     let fs = Fs::from_input(&text);
-    let sizes = DirSizes::from_fs(&fs);
+
     {
-        println!("Day 7.1: {}", sizes.sum_smaller_than(100_000));
+        let start = Instant::now();
+        let sizes = DirSizes::from_fs(&fs);
+        let result = sizes.sum_smaller_than(100_000);
+        let elapsed = start.elapsed();
+        println!("Day 7.1: {result} ({elapsed:?})",);
     }
     {
+        let start = Instant::now();
+        let sizes = DirSizes::from_fs(&fs);
         let (_, to_delete_size) = sizes
             .find_dir_to_delete(70_000_000, 30_000_000)
             .ok_or_else(|| eyre!("No dir to delete"))?;
-        println!("Day 7.2: {to_delete_size:?}");
+        let elapsed = start.elapsed();
+        println!("Day 7.2: {to_delete_size:?} ({elapsed:?})");
     }
 
     Ok(())

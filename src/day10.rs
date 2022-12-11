@@ -1,6 +1,7 @@
 use std::{
     fmt::{Display, Formatter},
     str::FromStr,
+    time::Instant,
 };
 use yansi::Paint;
 
@@ -259,19 +260,23 @@ impl MatchineState {
 pub fn day10() -> eyre::Result<()> {
     let instructions = parse_instructions(include_str!("../data/day10.txt"))?;
     {
+        let start = Instant::now();
         let mut state = MatchineState::new(instructions.clone());
         let signal = state.run();
         let result = signal.signal_strength();
-        println!("Day 10.1: {result}");
+        let elapsed = start.elapsed();
+        println!("Day 10.1: {result} ({elapsed:?})");
     }
     {
+        let start = Instant::now();
         let mut state = MatchineState::new(instructions);
         let screen = state.run_and_draw();
+        let elapsed = start.elapsed();
         let nice_output = screen
             .to_string()
             .replace('.', " ")
             .replace('#', &Paint::yellow("█").to_string());
-        println!("Day 10.2:");
+        println!("Day 10.2: ({elapsed:?})");
         println!("{nice_output}");
     }
     Ok(())
