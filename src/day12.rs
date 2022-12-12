@@ -1,8 +1,9 @@
 use crate::utils::Vec2D;
 use rayon::prelude::*;
 use std::{
-    collections::BTreeSet,
+    collections::{BTreeSet, HashMap},
     fmt::{Debug, Formatter},
+    hash::Hash,
     str::FromStr,
     time::Instant,
 };
@@ -30,6 +31,79 @@ struct HeightMap {
     map: Vec2D<i32>,
     start: Point,
     end: Point,
+}
+
+fn reconstruct_path<T>(came_from: &HashMap<T, T>, current: &T) -> Vec<T>
+where
+    T: Eq + Hash + Clone + Debug,
+{
+    let mut total_path = Vec::new();
+    let mut current = current;
+    while came_from.contains_key(current) {
+        current = &came_from[current];
+        total_path.push(current.clone());
+    }
+
+    total_path.reverse();
+    total_path
+}
+
+fn a_start<T, FHeuristic, FNeighbors, FDistance>(
+    start: T,
+    goal: T,
+    heuristic: FHeuristic,
+    neighbors: FNeighbors,
+    neighbor_distance: FDistance,
+) -> Option<Vec<T>>
+where
+    FHeuristic: Fn(&T) -> i32,
+    FNeighbors: Fn(&T) -> Vec<T>,
+    FDistance: Fn(&T, &T) -> i32,
+    T: Eq + Hash + Clone + Debug + Ord,
+{
+    let mut open_set = BTreeSet::new();
+    open_set.insert(start.clone());
+
+    let mut came_from = HashMap::<T, T>::new();
+
+    let mut g_score = HashMap::<T, i32>::new();
+    g_score.insert(start.clone(), 0);
+
+    let mut f_score = HashMap::<T, i32>::new();
+    f_score.insert(start.clone(), heuristic(&start));
+
+    while !open_set.is_empty() {
+        let current = open_set
+            .iter()
+            .filter_map(|p| f_score.get(p).map(|s| (p, s)))
+            .min_by_key(|(_, s)| *s)
+            .unwrap()
+            .0
+            .clone();
+
+        if current == goal {
+            return Some(reconstruct_path(&came_from, &current));
+        }
+
+        open_set.remove(&current);
+
+        for neighbor in neighbors(&current) {
+            let neighbor_distance_value = neighbor_distance(&current, &neighbor);
+            let tentative_g_score = g_score[&current] + neighbor_distance_value;
+            let neighbor_score = g_score.get(&neighbor);
+            if neighbor_score.is_none() || tentative_g_score < *neighbor_score.unwrap() {
+                came_from.insert(neighbor.clone(), current.clone());
+                g_score.insert(neighbor.clone(), tentative_g_score);
+                f_score.insert(neighbor.clone(), tentative_g_score + heuristic(&neighbor));
+
+                if !open_set.contains(&neighbor) {
+                    open_set.insert(neighbor.clone());
+                }
+            }
+        }
+    }
+
+    return None;
 }
 
 fn parse_elevation(c: char) -> eyre::Result<i32> {
@@ -208,10 +282,28 @@ impl HeightMap {
         }
     }
 
+    fn shortest_path_a_star(&self, start: Point, end: Point) -> Option<i32> {
+        let end_col = end.col as f64;
+        let end_row = end.row as f64;
+        let path = a_start(
+            start,
+            end,
+            |p| ((p.col as f64 - end_col).powi(2) + (p.row as f64 - end_row).powi(2)).sqrt() as i32,
+            |p| self.movable_neighbors(*p),
+            |_a, _b| 1,
+        );
+
+        path.map(|p| p.len() as i32)
+    }
+
     fn shortest_path_from_start(&self) -> Option<i32> {
         let (dist, _) = self
             .shortest_path_dijkstra(&self.start, Some(&self.end), |p| self.movable_neighbors(p));
         dist
+    }
+
+    fn shortest_path_from_start_a_star(&self) -> Option<i32> {
+        self.shortest_path_a_star(self.start, self.end)
     }
 
     fn sea_level_points(&self) -> Vec<Point> {
@@ -252,6 +344,14 @@ impl HeightMap {
             })
             .min()
     }
+
+    #[allow(dead_code)]
+    fn shortest_path_from_sea_a_star_rayon(&self) -> Option<i32> {
+        self.sea_level_points()
+            .par_iter()
+            .filter_map(|p| self.shortest_path_a_star(*p, self.end))
+            .min()
+    }
 }
 
 pub fn day12() -> eyre::Result<()> {
@@ -262,13 +362,35 @@ pub fn day12() -> eyre::Result<()> {
     {
         let start = Instant::now();
         let shortest_path = height_map
+            .shortest_path_from_start_a_star()
+            .ok_or_else(|| eyre::eyre!("No path found"))?;
+
+        let elapsed = start.elapsed();
+        let result = shortest_path;
+        println!("Day 12.1 [A*]: {result} ({elapsed:?})");
+    }
+
+    {
+        let start = Instant::now();
+        let result = height_map
+            .shortest_path_from_sea_a_star_rayon()
+            .ok_or_else(|| eyre::eyre!("No path found"))?;
+
+        let elapsed = start.elapsed();
+        println!("Day 12.2 [A*]: {result} ({elapsed:?})");
+    }
+
+    {
+        let start = Instant::now();
+        let shortest_path = height_map
             .shortest_path_from_start()
             .ok_or_else(|| eyre::eyre!("No path found"))?;
 
         let elapsed = start.elapsed();
         let result = shortest_path;
-        println!("Day 12.1: {result} ({elapsed:?})");
+        println!("Day 12.1 [Dijkstra]: {result} ({elapsed:?})");
     }
+
     {
         let start = Instant::now();
         let result = height_map
@@ -276,7 +398,7 @@ pub fn day12() -> eyre::Result<()> {
             .ok_or_else(|| eyre::eyre!("No path found"))?;
 
         let elapsed = start.elapsed();
-        println!("Day 12.2: {result} ({elapsed:?})");
+        println!("Day 12.2 [Dijkstra]: {result} ({elapsed:?})");
     }
 
     Ok(())
