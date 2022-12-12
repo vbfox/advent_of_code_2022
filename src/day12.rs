@@ -1,12 +1,7 @@
-use itertools::Itertools;
+use crate::utils::Vec2D;
 use rayon::prelude::*;
-use scarlet::colormap::{ColorMap, ListedColorMap};
-use scarlet::prelude::{ColorPoint, RGBColor};
-
-use crate::utils::{scale, Vec2D};
 use std::collections::BTreeSet;
 use std::fmt::Debug;
-
 use std::time::Instant;
 use std::{fmt::Formatter, str::FromStr};
 
