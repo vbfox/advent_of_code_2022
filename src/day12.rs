@@ -1,9 +1,11 @@
 use crate::utils::Vec2D;
 use rayon::prelude::*;
-use std::collections::BTreeSet;
-use std::fmt::Debug;
-use std::time::Instant;
-use std::{fmt::Formatter, str::FromStr};
+use std::{
+    collections::BTreeSet,
+    fmt::{Debug, Formatter},
+    str::FromStr,
+    time::Instant,
+};
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 struct Point {
