@@ -1,6 +1,9 @@
 #![allow(dead_code)]
 
-use std::fmt::{self, Display};
+use std::{
+    fmt::{self, Display},
+    ops::{Add, Div, Mul, Sub},
+};
 
 use eyre::{bail, eyre};
 use nom::{
@@ -163,4 +166,11 @@ pub fn parse_i32(input: &str) -> IResult<&str, i32> {
 
 pub fn parse_i64(input: &str) -> IResult<&str, i64> {
     map_res(digit1, str::parse)(input)
+}
+
+pub fn scale<T>(value: T, min: T, max: T, a: T, b: T) -> T
+where
+    T: Sub<Output = T> + Mul<Output = T> + Div<Output = T> + Add<Output = T> + Copy,
+{
+    (b - a) * (value - min) / (max - min) + a
 }

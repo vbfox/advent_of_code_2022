@@ -1,6 +1,9 @@
+use itertools::Itertools;
 use rayon::prelude::*;
+use scarlet::colormap::{ColorMap, ListedColorMap};
+use scarlet::prelude::{ColorPoint, RGBColor};
 
-use crate::utils::Vec2D;
+use crate::utils::{scale, Vec2D};
 use std::collections::BTreeSet;
 use std::fmt::Debug;
 
@@ -125,8 +128,27 @@ impl HeightMap {
             .collect()
     }
 
+    fn movable_neighbors_rev(&self, point: Point) -> Vec<Point> {
+        let height_at_point = self.map.get(point.row, point.col).unwrap();
+
+        self.neighbors(point)
+            .filter(|p| {
+                let height_at_neighbor = self.map.get(p.row, p.col).unwrap();
+                *height_at_point <= *height_at_neighbor + 1
+            })
+            .collect()
+    }
+
     // https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm
-    fn shortest_path(&self, start: &Point) -> Option<i32> {
+    fn shortest_path_dijkstra<FGetNeighbors>(
+        &self,
+        start: &Point,
+        end: Option<&Point>,
+        get_neighbors: FGetNeighbors,
+    ) -> (Option<i32>, Vec2D<Option<i32>>)
+    where
+        FGetNeighbors: Fn(Point) -> Vec<Point>,
+    {
         // Mark all nodes unvisited. Create a set of all the unvisited nodes called the unvisited set.
         let mut unvisited = BTreeSet::<Point>::new();
         for row in 0..self.map.rows {
@@ -151,8 +173,7 @@ impl HeightMap {
 
             // For the current node, consider all of its unvisited neighbors and calculate their tentative distances
             // through the current node.
-            for neighbor in self
-                .movable_neighbors(current)
+            for neighbor in get_neighbors(current)
                 .iter()
                 .filter(|p| unvisited.contains(p))
             {
@@ -178,9 +199,9 @@ impl HeightMap {
             unvisited.remove(&current);
 
             // If the destination node has been marked visited
-            if current == self.end {
+            if let Some(end) = end && current == *end {
                 // We are done
-                return *tentative_distances.get(self.end.row, self.end.col).unwrap();
+                return (*tentative_distances.get(end.row, end.col).unwrap(), tentative_distances);
             }
 
             let next = unvisited
@@ -201,17 +222,20 @@ impl HeightMap {
                 // if the smallest tentative distance among the nodes in the unvisited set is infinity (when planning
                 // a complete traversal; occurs when there is no connection between the initial node and remaining
                 // unvisited nodes)
-                None => return None,
+                None => return (None, tentative_distances),
             }
         }
     }
 
     fn shortest_path_from_start(&self) -> Option<i32> {
-        self.shortest_path(&self.start)
+        let (dist, _) = self
+            .shortest_path_dijkstra(&self.start, Some(&self.end), |p| self.movable_neighbors(p));
+        dist
     }
 
     fn sea_level_points(&self) -> Vec<Point> {
         let mut seal_level_points = Vec::new();
+
         for row in 0..self.map.rows {
             for col in 0..self.map.cols {
                 if *self.map.get(row, col).unwrap() == 1 {
@@ -219,19 +243,40 @@ impl HeightMap {
                 }
             }
         }
+
         seal_level_points
     }
 
-    fn shortest_path_from_sea(&self) -> Option<i32> {
+    fn shortest_path_from_sea_rayon(&self) -> Option<i32> {
         self.sea_level_points()
             .par_iter()
-            .filter_map(|p| self.shortest_path(p))
+            .filter_map(|p| {
+                let (dist, _) =
+                    self.shortest_path_dijkstra(p, Some(&self.end), |p| self.movable_neighbors(p));
+                dist
+            })
+            .min()
+    }
+
+    fn shortest_path_from_sea_smart(&self) -> Option<i32> {
+        let (_, shortest_from_end) =
+            self.shortest_path_dijkstra(&self.end, None, |p| self.movable_neighbors_rev(p));
+
+        self.sea_level_points()
+            .par_iter()
+            .filter_map(|p| {
+                let dist = shortest_from_end.get(p.row, p.col).unwrap();
+                *dist
+            })
             .min()
     }
 }
 
 pub fn day12() -> eyre::Result<()> {
     let height_map: HeightMap = include_str!("../data/day12.txt").parse()?;
+
+    height_map.map.paint_color();
+
     {
         let start = Instant::now();
         let shortest_path = height_map
@@ -247,7 +292,7 @@ pub fn day12() -> eyre::Result<()> {
         let start = Instant::now();
         let result = height_map
             .clone()
-            .shortest_path_from_sea()
+            .shortest_path_from_sea_smart()
             .ok_or_else(|| eyre::eyre!("No path found"))?;
 
         let elapsed = start.elapsed();
@@ -292,7 +337,7 @@ abdefghi"#;
     #[test]
     fn part2() -> eyre::Result<()> {
         let height_map = TEST_VECTOR.parse::<HeightMap>()?;
-        let shortest_path = height_map.shortest_path_from_sea().unwrap();
+        let shortest_path = height_map.shortest_path_from_sea_rayon().unwrap();
 
         assert_eq!(shortest_path, 29);
         Ok(())

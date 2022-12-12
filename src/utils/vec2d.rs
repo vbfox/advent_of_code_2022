@@ -1,6 +1,16 @@
-use std::iter::Flatten;
+use std::{
+    iter::Flatten,
+    ops::{Add, Div, Mul, Sub},
+};
 
 use eyre::bail;
+use itertools::Itertools;
+use scarlet::{
+    colormap::{ColorMap, ListedColorMap},
+    prelude::RGBColor,
+};
+
+use super::scale;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Vec2D<T> {
@@ -53,6 +63,72 @@ impl<T> Vec2D<T> {
 
     pub fn iter(&self) -> Flatten<std::slice::Iter<'_, Vec<T>>> {
         self.values.iter().flatten()
+    }
+
+    pub fn paint<F>(&self, paint_one: F)
+    where
+        F: Fn(&T) -> String,
+    {
+        for row in 0..self.rows {
+            for col in 0..self.cols {
+                print!("{}", paint_one(&self.values[row][col]));
+            }
+            println!();
+        }
+    }
+
+    pub fn paint_color(&self)
+    where
+        T: Sub<Output = T>
+            + Mul<Output = T>
+            + Div<Output = T>
+            + Add<Output = T>
+            + PartialOrd
+            + Ord
+            + Into<f64>
+            + Copy,
+    {
+        let (&min, &max) = self.iter().minmax().into_option().unwrap();
+        let viridis = ListedColorMap::viridis();
+
+        self.paint(|h| {
+            let scaled = scale(
+                Into::<f64>::into(*h),
+                Into::<f64>::into(min),
+                Into::<f64>::into(max),
+                0.0,
+                1.0,
+            );
+            let colorpoint: RGBColor = viridis.transform_single(scaled);
+
+            let color =
+                yansi::Color::RGB(colorpoint.int_r(), colorpoint.int_g(), colorpoint.int_b());
+
+            color.paint('█').to_string()
+        });
+    }
+
+    pub fn paint_color_map<F, U>(&self, f: F)
+    where
+        F: Fn(&T) -> U,
+        U: Sub<Output = U>
+            + Mul<Output = U>
+            + Div<Output = U>
+            + Add<Output = U>
+            + PartialOrd
+            + Ord
+            + Default
+            + Into<f64>
+            + Copy,
+    {
+        let mut values = Vec2D::new(self.rows, self.cols, U::default());
+        for row in 0..self.rows {
+            for col in 0..self.cols {
+                values.values[row][col] = f(&self.values[row][col]);
+            }
+        }
+
+        values.paint_color();
     }
 }
 
