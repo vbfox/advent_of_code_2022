@@ -76,22 +76,6 @@ impl FromStr for HeightMap {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-struct SearchState {
-    current: Point,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-struct SearchResult {
-    distance: i32,
-    path: Vec<Point>,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-struct GlobalSearchState {
-    cache: Vec2D<Option<Option<SearchResult>>>,
-}
-
 impl HeightMap {
     fn neighbors(&self, point: Point) -> impl Iterator<Item = Point> + '_ {
         let mut neighbors = Vec::new();
@@ -242,6 +226,7 @@ impl HeightMap {
         seal_level_points
     }
 
+    #[allow(dead_code)]
     fn shortest_path_from_sea_rayon(&self) -> Option<i32> {
         self.sea_level_points()
             .par_iter()
@@ -275,7 +260,6 @@ pub fn day12() -> eyre::Result<()> {
     {
         let start = Instant::now();
         let shortest_path = height_map
-            .clone()
             .shortest_path_from_start()
             .ok_or_else(|| eyre::eyre!("No path found"))?;
 
@@ -286,7 +270,6 @@ pub fn day12() -> eyre::Result<()> {
     {
         let start = Instant::now();
         let result = height_map
-            .clone()
             .shortest_path_from_sea_smart()
             .ok_or_else(|| eyre::eyre!("No path found"))?;
 
