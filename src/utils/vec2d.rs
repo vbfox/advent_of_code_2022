@@ -2,6 +2,7 @@ use std::iter::Flatten;
 
 use eyre::bail;
 
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Vec2D<T> {
     pub values: Vec<Vec<T>>,
     pub rows: usize,
