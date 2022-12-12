@@ -1,7 +1,7 @@
-use crate::utils::Vec2D;
+use crate::utils::{a_start, dijkstra, Vec2D};
 use rayon::prelude::*;
 use std::{
-    collections::{BTreeSet, HashMap},
+    collections::HashMap,
     fmt::{Debug, Formatter},
     hash::Hash,
     str::FromStr,
@@ -31,79 +31,6 @@ struct HeightMap {
     map: Vec2D<i32>,
     start: Point,
     end: Point,
-}
-
-fn reconstruct_path<T>(came_from: &HashMap<T, T>, current: &T) -> Vec<T>
-where
-    T: Eq + Hash + Clone + Debug,
-{
-    let mut total_path = Vec::new();
-    let mut current = current;
-    while came_from.contains_key(current) {
-        current = &came_from[current];
-        total_path.push(current.clone());
-    }
-
-    total_path.reverse();
-    total_path
-}
-
-fn a_start<T, FHeuristic, FNeighbors, FDistance>(
-    start: T,
-    goal: T,
-    heuristic: FHeuristic,
-    neighbors: FNeighbors,
-    neighbor_distance: FDistance,
-) -> Option<Vec<T>>
-where
-    FHeuristic: Fn(&T) -> i32,
-    FNeighbors: Fn(&T) -> Vec<T>,
-    FDistance: Fn(&T, &T) -> i32,
-    T: Eq + Hash + Clone + Debug + Ord,
-{
-    let mut open_set = BTreeSet::new();
-    open_set.insert(start.clone());
-
-    let mut came_from = HashMap::<T, T>::new();
-
-    let mut g_score = HashMap::<T, i32>::new();
-    g_score.insert(start.clone(), 0);
-
-    let mut f_score = HashMap::<T, i32>::new();
-    f_score.insert(start.clone(), heuristic(&start));
-
-    while !open_set.is_empty() {
-        let current = open_set
-            .iter()
-            .filter_map(|p| f_score.get(p).map(|s| (p, s)))
-            .min_by_key(|(_, s)| *s)
-            .unwrap()
-            .0
-            .clone();
-
-        if current == goal {
-            return Some(reconstruct_path(&came_from, &current));
-        }
-
-        open_set.remove(&current);
-
-        for neighbor in neighbors(&current) {
-            let neighbor_distance_value = neighbor_distance(&current, &neighbor);
-            let tentative_g_score = g_score[&current] + neighbor_distance_value;
-            let neighbor_score = g_score.get(&neighbor);
-            if neighbor_score.is_none() || tentative_g_score < *neighbor_score.unwrap() {
-                came_from.insert(neighbor.clone(), current.clone());
-                g_score.insert(neighbor.clone(), tentative_g_score);
-                f_score.insert(neighbor.clone(), tentative_g_score + heuristic(&neighbor));
-
-                if !open_set.contains(&neighbor) {
-                    open_set.insert(neighbor.clone());
-                }
-            }
-        }
-    }
-
-    return None;
 }
 
 fn parse_elevation(c: char) -> eyre::Result<i32> {
@@ -197,89 +124,24 @@ impl HeightMap {
     // https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm
     fn shortest_path_dijkstra<FGetNeighbors>(
         &self,
-        start: &Point,
-        end: Option<&Point>,
+        start: Point,
+        end: Option<Point>,
         get_neighbors: FGetNeighbors,
-    ) -> (Option<i32>, Vec2D<Option<i32>>)
+    ) -> (Option<i32>, HashMap<Point, i32>)
     where
-        FGetNeighbors: Fn(Point) -> Vec<Point>,
+        FGetNeighbors: Fn(&Point) -> Vec<Point>,
     {
         // Mark all nodes unvisited. Create a set of all the unvisited nodes called the unvisited set.
-        let mut unvisited = BTreeSet::<Point>::new();
+        let mut all_nodes = Vec::new();
         for row in 0..self.map.rows {
             for col in 0..self.map.cols {
-                unvisited.insert(Point::new(row, col));
+                all_nodes.push(Point::new(row, col));
             }
         }
 
-        // Assign to every node a tentative distance value: set it to zero for our initial node and to infinity
-        // for all other nodes.
-        let mut tentative_distances = Vec2D::<Option<i32>>::new(self.map.rows, self.map.cols, None);
-        tentative_distances.set(start.row, start.col, Some(0));
+        let result = dijkstra(start, end, get_neighbors, |_a, _b| 1, all_nodes);
 
-        // Set the initial node as current
-        let mut current = *start;
-
-        loop {
-            let tentative_distance = tentative_distances
-                .get(current.row, current.col)
-                .unwrap()
-                .unwrap();
-
-            // For the current node, consider all of its unvisited neighbors and calculate their tentative distances
-            // through the current node.
-            for neighbor in get_neighbors(current)
-                .iter()
-                .filter(|p| unvisited.contains(p))
-            {
-                let new_tentative_distance = tentative_distance + 1;
-                let current_tentative_distance =
-                    tentative_distances.get(neighbor.row, neighbor.col).unwrap();
-
-                // Compare the newly calculated tentative distance to the one currently assigned to the neighbor and
-                // assign it the smaller one.
-                if current_tentative_distance.is_none()
-                    || new_tentative_distance < current_tentative_distance.unwrap()
-                {
-                    tentative_distances.set(
-                        neighbor.row,
-                        neighbor.col,
-                        Some(new_tentative_distance),
-                    );
-                }
-            }
-
-            // When we are done considering all of the unvisited neighbors of the current node, mark the current node
-            // as visited and remove it from the unvisited set
-            unvisited.remove(&current);
-
-            // If the destination node has been marked visited
-            if let Some(end) = end && current == *end {
-                // We are done
-                return (*tentative_distances.get(end.row, end.col).unwrap(), tentative_distances);
-            }
-
-            let next = unvisited
-                .iter()
-                .filter_map(|p| {
-                    tentative_distances
-                        .get(p.row, p.col)
-                        .unwrap()
-                        .map(|d| (d, p))
-                })
-                .min_by_key(|(d, _)| *d)
-                .map(|(_, p)| p);
-
-            match next {
-                // Otherwise, select the unvisited node that is marked with the smallest tentative distance, set it as
-                // the new current node
-                Some(next) => current = *next,
-                // if the smallest tentative distance among the nodes in the unvisited set is infinity (when planning
-                // a complete traversal; occurs when there is no connection between the initial node and remaining
-                // unvisited nodes)
-                None => return (None, tentative_distances),
-            }
-        }
+        (result.distance_to_end, result.distances)
     }
 
     fn shortest_path_a_star(&self, start: Point, end: Point) -> Option<i32> {
@@ -297,9 +159,11 @@ impl HeightMap {
     }
 
     fn shortest_path_from_start(&self) -> Option<i32> {
-        let (dist, _) = self
-            .shortest_path_dijkstra(&self.start, Some(&self.end), |p| self.movable_neighbors(p));
-        dist
+        // Use the reverse function as it's faster to run
+        let (_, shortest_from_end) =
+            self.shortest_path_dijkstra(self.end, None, |p| self.movable_neighbors_rev(*p));
+
+        shortest_from_end.get(&self.start).copied()
     }
 
     fn shortest_path_from_start_a_star(&self) -> Option<i32> {
@@ -326,7 +190,7 @@ impl HeightMap {
             .par_iter()
             .filter_map(|p| {
                 let (dist, _) =
-                    self.shortest_path_dijkstra(p, Some(&self.end), |p| self.movable_neighbors(p));
+                    self.shortest_path_dijkstra(*p, Some(self.end), |p| self.movable_neighbors(*p));
                 dist
             })
             .min()
@@ -334,13 +198,13 @@ impl HeightMap {
 
     fn shortest_path_from_sea_smart(&self) -> Option<i32> {
         let (_, shortest_from_end) =
-            self.shortest_path_dijkstra(&self.end, None, |p| self.movable_neighbors_rev(p));
+            self.shortest_path_dijkstra(self.end, None, |p| self.movable_neighbors_rev(*p));
 
         self.sea_level_points()
             .par_iter()
             .filter_map(|p| {
-                let dist = shortest_from_end.get(p.row, p.col).unwrap();
-                *dist
+                let dist = shortest_from_end.get(p);
+                dist.copied()
             })
             .min()
     }
