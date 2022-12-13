@@ -273,7 +273,7 @@ impl BoardState {
                 '#' => 1,
                 _ => 2,
             },
-            |c| c.to_string(),
+            ToString::to_string,
         );
     }
 }
