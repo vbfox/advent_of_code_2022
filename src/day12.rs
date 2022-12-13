@@ -121,7 +121,6 @@ impl HeightMap {
             .collect()
     }
 
-    // https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm
     fn shortest_path_dijkstra<FGetNeighbors>(
         &self,
         start: Point,
@@ -131,7 +130,6 @@ impl HeightMap {
     where
         FGetNeighbors: Fn(&Point) -> Vec<Point>,
     {
-        // Mark all nodes unvisited. Create a set of all the unvisited nodes called the unvisited set.
         let mut all_nodes = Vec::new();
         for row in 0..self.map.rows {
             for col in 0..self.map.cols {
@@ -144,6 +142,11 @@ impl HeightMap {
         (result.distance_to_end, result.distances)
     }
 
+    #[allow(
+        clippy::cast_possible_wrap,
+        clippy::cast_possible_truncation,
+        clippy::cast_precision_loss
+    )]
     fn shortest_path_a_star(&self, start: Point, end: Point) -> Option<i32> {
         let end_col = end.col as f64;
         let end_row = end.row as f64;
@@ -158,6 +161,7 @@ impl HeightMap {
         path.map(|p| p.len() as i32)
     }
 
+    #[allow(dead_code)]
     fn shortest_path_from_start(&self) -> Option<i32> {
         // Use the reverse function as it's faster to run
         let (_, shortest_from_end) =
@@ -196,6 +200,7 @@ impl HeightMap {
             .min()
     }
 
+    #[allow(dead_code)]
     fn shortest_path_from_sea_smart(&self) -> Option<i32> {
         let (_, shortest_from_end) =
             self.shortest_path_dijkstra(self.end, None, |p| self.movable_neighbors_rev(*p));
@@ -221,7 +226,9 @@ impl HeightMap {
 pub fn day12() -> eyre::Result<()> {
     let height_map: HeightMap = include_str!("../data/day12.txt").parse()?;
 
-    height_map.map.paint_color();
+    //height_map.map.paint_color_map(|x| *x, |x| (('a' as u8 + *x as u8 - 1) as char).to_string());
+
+    // height_map.map.paint_color();
 
     {
         let start = Instant::now();
@@ -233,7 +240,6 @@ pub fn day12() -> eyre::Result<()> {
         let result = shortest_path;
         println!("Day 12.1 [A*]: {result} ({elapsed:?})");
     }
-
     {
         let start = Instant::now();
         let result = height_map
@@ -244,6 +250,7 @@ pub fn day12() -> eyre::Result<()> {
         println!("Day 12.2 [A*]: {result} ({elapsed:?})");
     }
 
+    #[cfg(not(debug_assertions))]
     {
         let start = Instant::now();
         let shortest_path = height_map
@@ -255,6 +262,7 @@ pub fn day12() -> eyre::Result<()> {
         println!("Day 12.1 [Dijkstra]: {result} ({elapsed:?})");
     }
 
+    #[cfg(not(debug_assertions))]
     {
         let start = Instant::now();
         let result = height_map

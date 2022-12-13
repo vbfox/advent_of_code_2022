@@ -49,7 +49,7 @@ fn setup() -> Result<()> {
 
 fn main() -> Result<()> {
     setup()?;
-    //previous_days()?;
+    previous_days()?;
 
     day12::day12()?;
 

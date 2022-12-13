@@ -28,6 +28,7 @@ where
 /// * `heuristic` - The heuristic function. Estimates the cost to reach goal from the passed-in node.
 /// * `neighbors` - The function to get the neighbors of a node
 /// * `neighbor_distance` - The function to get the distance between the current node and a neighbor
+#[allow(clippy::needless_pass_by_value)]
 pub fn a_start<TNode, FHeuristic, FNeighbors, FDistance>(
     start: TNode,
     goal: TNode,
@@ -83,7 +84,7 @@ where
         }
     }
 
-    return None;
+    None
 }
 
 #[derive(Debug, Clone)]
@@ -96,9 +97,10 @@ pub struct DijkstraResult<TNode> {
 }
 
 // https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm
+#[allow(clippy::needless_pass_by_value)]
 pub fn dijkstra<TNode, FNeighbors, FDistance>(
     start: TNode,
-    end: Option<TNode>,
+    goal: Option<TNode>,
     neighbors: FNeighbors,
     neighbor_distance: FDistance,
     all_nodes: Vec<TNode>,
@@ -149,9 +151,9 @@ where
         unvisited.remove(&current);
 
         // If the destination node has been marked visited
-        if let Some(ref end) = end && &current == end {
+        if let Some(ref end) = goal && &current == end {
             // We are done
-            let distance_to_end = tentative_distances.get(&end).expect("end node not in tentative distances");
+            let distance_to_end = tentative_distances.get(end).expect("end node not in tentative distances");
             return  DijkstraResult {
                 distance_to_end: Some(*distance_to_end),
                 distances: tentative_distances,
