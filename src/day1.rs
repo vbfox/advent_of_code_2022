@@ -135,9 +135,9 @@ pub fn day1() -> eyre::Result<()> {
 
 #[cfg(test)]
 mod tests {
-    use std::io::Cursor;
-
     use super::*;
+    use pretty_assertions::assert_eq;
+    use std::io::Cursor;
 
     fn load_elves_calories_from_string(s: impl AsRef<str>) -> Result<Vec<Elf>, LoadError> {
         let reader = Cursor::new(s.as_ref());

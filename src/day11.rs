@@ -267,6 +267,7 @@ pub fn day11() -> eyre::Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use pretty_assertions::assert_eq;
 
     static TEST_MONKEY: &str = r#"Monkey 0:
   Starting items: 79, 98

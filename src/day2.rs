@@ -260,9 +260,9 @@ pub fn day2() -> eyre::Result<()> {
 
 #[cfg(test)]
 mod tests {
-    use std::io::Cursor;
-
     use super::*;
+    use pretty_assertions::assert_eq;
+    use std::io::Cursor;
 
     fn load_from_string(s: impl AsRef<str>) -> Result<Vec<StrategyLine>, LineFromStrError> {
         let reader = Cursor::new(s.as_ref());

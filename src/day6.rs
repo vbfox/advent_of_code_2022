@@ -51,6 +51,7 @@ pub fn day6() -> eyre::Result<()> {
 #[allow(clippy::bool_assert_comparison)]
 mod tests {
     use super::*;
+    use pretty_assertions::assert_eq;
 
     fn part1_index(s: &str) -> usize {
         find_marker(s, 4).unwrap()

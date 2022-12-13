@@ -248,9 +248,9 @@ pub fn day3() -> eyre::Result<()> {
 
 #[cfg(test)]
 mod tests {
-    use std::io::Cursor;
-
     use super::*;
+    use pretty_assertions::assert_eq;
+    use std::io::Cursor;
 
     fn load_from_string(s: impl AsRef<str>) -> Result<Vec<RuckSack>, LoadError> {
         let reader = Cursor::new(s.as_ref());

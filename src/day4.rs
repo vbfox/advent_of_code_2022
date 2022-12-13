@@ -116,9 +116,9 @@ pub fn day4() -> eyre::Result<()> {
 #[cfg(test)]
 #[allow(clippy::bool_assert_comparison)]
 mod tests {
-    use std::io::Cursor;
-
     use super::*;
+    use pretty_assertions::assert_eq;
+    use std::io::Cursor;
 
     static TEST_VECTOR: &str = r#"2-4,6-8
 2-3,4-5

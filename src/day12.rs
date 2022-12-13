@@ -278,9 +278,9 @@ pub fn day12() -> eyre::Result<()> {
 
 #[cfg(test)]
 mod tests {
-    use itertools::Itertools;
-
     use super::*;
+    use itertools::Itertools;
+    use pretty_assertions::assert_eq;
 
     static TEST_VECTOR: &str = r#"Sabqponm
 abcryxxl

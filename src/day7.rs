@@ -207,6 +207,7 @@ pub fn day7() -> eyre::Result<()> {
 #[allow(clippy::bool_assert_comparison)]
 mod tests {
     use super::*;
+    use pretty_assertions::assert_eq;
 
     static TEST_VECTOR: &str = r#"$ cd /
 $ ls
