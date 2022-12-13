@@ -35,6 +35,7 @@ fn previous_days() -> Result<()> {
     day10::day10()?;
     day11::day11()?;
     day12::day12()?;
+    day13::day13()?;
 
     Ok(())
 }
@@ -53,7 +54,7 @@ fn main() -> Result<()> {
     setup()?;
     // previous_days()?;
 
-    day13::day13()?;
+    day9::day9()?;
 
     Ok(())
 }

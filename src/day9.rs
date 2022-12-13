@@ -3,6 +3,8 @@ use std::{collections::HashSet, fmt::Display, str::FromStr, time::Instant};
 use eyre::eyre;
 use itertools::Itertools;
 
+use crate::utils::Vec2D;
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 enum Direction {
     Up,
@@ -139,6 +141,7 @@ impl Part {
         }
     }
 
+    #[cfg(test)]
     pub fn has_visited(&self, position: Position) -> bool {
         self.visited
             .as_ref()
@@ -221,10 +224,9 @@ impl BoardState {
         let last = self.tails.last().unwrap();
         last.visited.as_ref().unwrap().len()
     }
-}
 
-impl Display for BoardState {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    #[allow(dead_code)]
+    pub fn paint(&self) {
         let mut positions = self
             .tails
             .iter()
@@ -238,24 +240,41 @@ impl Display for BoardState {
         let min_y = positions.iter().map(|p| p.y).min().unwrap();
         let max_y = positions.iter().map(|p| p.y).max().unwrap();
 
-        let last_tail = self.tails.last().unwrap();
+        let mut vec_2d = Vec2D::new(
+            (max_x - min_x + 1).try_into().unwrap(),
+            (max_y - min_y + 1).try_into().unwrap(),
+            '.',
+        );
 
-        for y in (min_y..=max_y).rev() {
-            for x in min_x..=max_x {
-                let position = Position { x, y };
-                if position == self.head.position {
-                    write!(f, "{}", self.head.name)?;
-                } else if let Some(tail) = self.tails.iter().find(|t| t.position == position) {
-                    write!(f, "{}", tail.name)?;
-                } else if last_tail.has_visited(position) {
-                    write!(f, "#")?;
-                } else {
-                    write!(f, ".")?;
-                }
-            }
-            writeln!(f)?;
+        for p in positions {
+            vec_2d.set(
+                (p.x - min_x).try_into().unwrap(),
+                (p.y - min_y).try_into().unwrap(),
+                '#',
+            );
         }
-        Ok(())
+
+        vec_2d.set(
+            (self.head.position.x - min_x).try_into().unwrap(),
+            (self.head.position.y - min_y).try_into().unwrap(),
+            'H',
+        );
+        for tail in &self.tails {
+            vec_2d.set(
+                (tail.position.x - min_x).try_into().unwrap(),
+                (tail.position.y - min_y).try_into().unwrap(),
+                tail.name,
+            );
+        }
+
+        vec_2d.paint_color_map(
+            |c| match *c {
+                '.' => 0,
+                '#' => 1,
+                _ => 2,
+            },
+            |c| c.to_string(),
+        );
     }
 }
 
@@ -265,12 +284,14 @@ pub fn day9() -> eyre::Result<()> {
         let mut s = BoardState::new(1);
         let start = Instant::now();
         s.do_moves(&motions);
+        // s.paint();
         println!("Day 9.1: {} ({:?})", s.visited_positions(), start.elapsed());
     }
     {
         let mut s = BoardState::new(9);
         let start = Instant::now();
         s.do_moves(&motions);
+        // s.paint();
         println!("Day 9.2: {} ({:?})", s.visited_positions(), start.elapsed());
     }
 

@@ -45,7 +45,6 @@ impl Ord for Paket {
             }
             (Paket::List(a), Paket::List(b)) => {
                 // If both values are lists,
-
                 for either_or_both in a.iter().zip_longest(b.iter()) {
                     match either_or_both {
                         // compare the first value of each list, then the second value, and so on
