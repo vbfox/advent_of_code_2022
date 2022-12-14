@@ -1,6 +1,7 @@
 #![warn(clippy::all, clippy::pedantic)]
 #![feature(let_chains)]
 #![feature(iter_advance_by)]
+#![feature(extend_one)]
 
 use color_eyre::eyre::Result;
 use yansi::Paint;
@@ -12,6 +13,7 @@ mod day10;
 mod day11;
 mod day12;
 mod day13;
+mod day14;
 mod day2;
 mod day3;
 mod day4;
@@ -54,7 +56,7 @@ fn main() -> Result<()> {
     setup()?;
     // previous_days()?;
 
-    day9::day9()?;
+    day14::day14()?;
 
     Ok(())
 }

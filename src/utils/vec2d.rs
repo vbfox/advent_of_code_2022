@@ -61,6 +61,27 @@ impl<T> Vec2D<T> {
         Ok(())
     }
 
+    pub fn map<U, F>(&self, op: F) -> Vec2D<U>
+    where
+        F: Fn(&T, usize, usize) -> U,
+    {
+        Vec2D {
+            values: self
+                .values
+                .iter()
+                .enumerate()
+                .map(|(row, r)| {
+                    r.iter()
+                        .enumerate()
+                        .map(|(col, val)| op(val, row, col))
+                        .collect()
+                })
+                .collect(),
+            rows: self.rows,
+            cols: self.cols,
+        }
+    }
+
     pub fn iter(&self) -> Flatten<std::slice::Iter<'_, Vec<T>>> {
         self.values.iter().flatten()
     }
