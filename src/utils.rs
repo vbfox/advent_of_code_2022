@@ -1,19 +1,20 @@
 #![allow(dead_code)]
 
-use std::{
-    fmt::{self, Display},
-    ops::{Add, Div, Mul, Sub},
-};
-
 use eyre::{bail, eyre};
 use nom::{
     character::complete::digit1, combinator::map_res, error::ParseError, IResult, InputLength,
     Parser,
 };
+use std::{
+    fmt::{self, Display},
+    ops::{Add, Div, Mul, Sub},
+};
 
+mod aoc;
 mod shortest_path;
 mod vec2d;
 
+pub use aoc::{DayParams, DayPart};
 pub use shortest_path::{a_start, dijkstra, DijkstraResult};
 pub use vec2d::Vec2D;
 
@@ -169,6 +170,8 @@ pub fn parse_i32(input: &str) -> IResult<&str, i32> {
 pub fn parse_i64(input: &str) -> IResult<&str, i64> {
     map_res(digit1, str::parse)(input)
 }
+
+// --------------------------------------------------------------------------
 
 pub fn scale<T>(value: T, min: T, max: T, a: T, b: T) -> T
 where

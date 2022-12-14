@@ -4,7 +4,7 @@ build *ARGS:
     cargo build {{ARGS}}
 
 run *ARGS:
-    cargo run {{ARGS}}
+    cargo run -- {{ARGS}}
 
 test *ARGS:
     cargo nextest run {{ARGS}}

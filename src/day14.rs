@@ -1,4 +1,4 @@
-use crate::utils::{nom_finish, parse_i32, Vec2D};
+use crate::utils::{nom_finish, parse_i32, DayParams, Vec2D};
 use itertools::Itertools;
 use nom::{
     bytes::complete::tag,
@@ -13,7 +13,6 @@ use std::{
     collections::HashMap,
     fmt::Formatter,
     ops::{Add, Sub},
-    time::Instant,
 };
 use std::{collections::HashSet, fmt::Debug};
 
@@ -324,30 +323,22 @@ impl Cave {
     }
 }
 
-pub fn day14() -> eyre::Result<()> {
-    let input = include_str!("../data/day14.txt");
-    // let input = "498,4 -> 498,6 -> 496,6\n503,4 -> 502,4 -> 502,9 -> 494,9";
+pub fn day14(p: DayParams) -> eyre::Result<()> {
+    let input = &p.read_data()?;
 
     let scan = nom_finish(Scan::parse, input)?;
-    {
-        println!("CNT: {}", scan.lines.len());
-        let start = Instant::now();
+
+    p.part_1(|| {
         let mut cave = Cave::from_scan(&scan, Point::new(500, 0), false);
         cave.emit_sand_util_filled();
-        let result = cave.count_sand();
-        let elapsed = start.elapsed();
-        // cave.paint();
-        println!("Day 14.1: {result} ({elapsed:?})");
-    }
-    {
-        let start = Instant::now();
+        Ok(cave.count_sand())
+    })?;
+
+    p.part_2(|| {
         let mut cave = Cave::from_scan(&scan, Point::new(500, 0), true);
         cave.emit_sand_util_filled();
-        let result = cave.count_sand();
-        let elapsed = start.elapsed();
-        // cave.paint();
-        println!("Day 14.2: {result} ({elapsed:?})");
-    }
+        Ok(cave.count_sand())
+    })?;
 
     Ok(())
 }

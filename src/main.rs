@@ -3,7 +3,10 @@
 #![feature(iter_advance_by)]
 #![feature(extend_one)]
 
+use clap::Parser;
 use color_eyre::eyre::Result;
+use once_cell::sync::Lazy;
+use utils::DayParams;
 use yansi::Paint;
 
 mod utils;
@@ -22,6 +25,30 @@ mod day6;
 mod day7;
 mod day8;
 mod day9;
+
+struct Day {
+    number: u8,
+    func: fn(DayParams) -> Result<()>,
+}
+
+impl Day {
+    fn new(index: u8, func: fn(DayParams) -> Result<()>) -> Self {
+        Self {
+            number: index,
+            func,
+        }
+    }
+
+    fn run(&self, params: DayParams) -> Result<()> {
+        (self.func)(params)
+    }
+}
+
+static DAYS: Lazy<Vec<Day>> = Lazy::new(|| {
+    let mut result = Vec::new();
+    result.push(Day::new(14, day14::day14));
+    result
+});
 
 #[allow(dead_code)]
 fn previous_days() -> Result<()> {
@@ -42,6 +69,26 @@ fn previous_days() -> Result<()> {
     Ok(())
 }
 
+#[derive(Parser, Debug)]
+#[command(author, version, about, long_about = None)]
+struct Args {
+    /// Day to run, defaults to the latest
+    #[arg(short, long)]
+    day: Option<u8>,
+
+    /// Part to run, defaults to both
+    #[arg(short, long)]
+    part: Option<u8>,
+
+    /// Use the dayXX_test.txt file instead of dayXX.txt
+    #[arg(short, long, default_value_t = false)]
+    test: bool,
+
+    /// Enable debug output
+    #[arg(long)]
+    debug: Option<bool>,
+}
+
 fn setup() -> Result<()> {
     color_eyre::install()?;
 
@@ -53,10 +100,28 @@ fn setup() -> Result<()> {
 }
 
 fn main() -> Result<()> {
+    let args = Args::parse();
     setup()?;
+
+    let day = args
+        .day
+        .and_then(|number| DAYS.iter().find(|d| d.number == number))
+        .unwrap_or(DAYS.iter().max_by_key(|d| d.number).unwrap());
+
+    let part = match args.part {
+        Some(1) => utils::DayPart::One,
+        Some(2) => utils::DayPart::Two,
+        _ => utils::DayPart::Both,
+    };
+    day.run(DayParams {
+        number: day.number,
+        part,
+        test: args.test,
+        debug: args.debug.unwrap_or(false),
+    })?;
     // previous_days()?;
 
-    day14::day14()?;
+    // day14::day14()?;
 
     Ok(())
 }
