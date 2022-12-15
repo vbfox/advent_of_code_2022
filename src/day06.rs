@@ -34,7 +34,7 @@ fn find_marker(s: &str, len: usize) -> Option<usize> {
     None
 }
 
-pub fn day06(p: DayParams) -> eyre::Result<()> {
+pub fn day06(p: &DayParams) -> eyre::Result<()> {
     let text = load_from_file(p.input_path())?;
 
     {

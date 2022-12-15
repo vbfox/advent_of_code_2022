@@ -181,7 +181,7 @@ impl DirSizes {
     }
 }
 
-pub fn day07(p: DayParams) -> eyre::Result<()> {
+pub fn day07(p: &DayParams) -> eyre::Result<()> {
     let text = load_from_file(p.input_path())?;
     let fs = Fs::from_input(&text);
 

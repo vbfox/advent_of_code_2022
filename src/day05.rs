@@ -245,7 +245,7 @@ fn load_from_file(path: impl AsRef<Path>) -> eyre::Result<Input> {
     load_from_reader(BufReader::new(file))
 }
 
-pub fn day05(p: DayParams) -> eyre::Result<()> {
+pub fn day05(p: &DayParams) -> eyre::Result<()> {
     let lines = load_from_file(p.input_path())?;
 
     {

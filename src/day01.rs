@@ -117,7 +117,7 @@ fn load_elves_calories_from_file(path: impl AsRef<Path>) -> Result<Vec<Elf>, Loa
 
 // --------------------------------------------------------------------
 
-pub fn day01(p: DayParams) -> eyre::Result<()> {
+pub fn day01(p: &DayParams) -> eyre::Result<()> {
     let mut elves = load_elves_calories_from_file(p.input_path())?;
 
     elves.sort_by_key(|e| Reverse(e.total_calories()));

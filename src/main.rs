@@ -28,18 +28,18 @@ mod day14;
 
 struct Day {
     number: u8,
-    func: fn(DayParams) -> Result<()>,
+    func: fn(&DayParams) -> Result<()>,
 }
 
 impl Day {
-    fn new(index: u8, func: fn(DayParams) -> Result<()>) -> Self {
+    fn new(index: u8, func: fn(&DayParams) -> Result<()>) -> Self {
         Self {
             number: index,
             func,
         }
     }
 
-    fn run(&self, params: DayParams) -> Result<()> {
+    fn run(&self, params: &DayParams) -> Result<()> {
         (self.func)(params)
     }
 }
@@ -107,7 +107,7 @@ fn main() -> Result<()> {
         Some(2) => utils::DayPart::Two,
         _ => utils::DayPart::Both,
     };
-    day.run(DayParams {
+    day.run(&DayParams {
         number: day.number,
         part,
         test: args.test,

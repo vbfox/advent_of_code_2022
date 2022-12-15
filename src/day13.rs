@@ -164,7 +164,7 @@ impl PaketFile {
     }
 }
 
-pub fn day13(p: DayParams) -> eyre::Result<()> {
+pub fn day13(p: &DayParams) -> eyre::Result<()> {
     let input = &p.read_input()?;
     let input = nom_finish(PaketFile::parse, input)?;
 

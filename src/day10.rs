@@ -259,7 +259,7 @@ impl MatchineState {
     }
 }
 
-pub fn day10(p: DayParams) -> eyre::Result<()> {
+pub fn day10(p: &DayParams) -> eyre::Result<()> {
     let instructions = parse_instructions(&p.read_input()?)?;
     {
         let start = Instant::now();

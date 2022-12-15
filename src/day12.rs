@@ -223,7 +223,7 @@ impl HeightMap {
     }
 }
 
-pub fn day12(p: DayParams) -> eyre::Result<()> {
+pub fn day12(p: &DayParams) -> eyre::Result<()> {
     let height_map: HeightMap = p.read_input()?.parse()?;
 
     if p.debug {

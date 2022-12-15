@@ -242,7 +242,7 @@ impl State {
     }
 }
 
-pub fn day11(p: DayParams) -> eyre::Result<()> {
+pub fn day11(p: &DayParams) -> eyre::Result<()> {
     let input: Input = p.read_input()?.parse()?;
     {
         let start = Instant::now();

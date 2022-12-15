@@ -278,7 +278,7 @@ impl BoardState {
     }
 }
 
-pub fn day09(p: DayParams) -> eyre::Result<()> {
+pub fn day09(p: &DayParams) -> eyre::Result<()> {
     let motions: Motions = p.read_input()?.parse()?;
     {
         let mut s = BoardState::new(1);

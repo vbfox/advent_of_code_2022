@@ -323,7 +323,7 @@ impl Cave {
     }
 }
 
-pub fn day14(p: DayParams) -> eyre::Result<()> {
+pub fn day14(p: &DayParams) -> eyre::Result<()> {
     let input = &p.read_input()?;
 
     let scan = nom_finish(Scan::parse, input)?;

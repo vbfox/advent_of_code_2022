@@ -264,7 +264,7 @@ impl Display for TreeVisibility {
     }
 }
 
-pub fn day08(p: DayParams) -> eyre::Result<()> {
+pub fn day08(p: &DayParams) -> eyre::Result<()> {
     let forest: Forest = p.read_input()?.parse()?;
     {
         let start = Instant::now();

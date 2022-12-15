@@ -222,7 +222,7 @@ fn load_from_file(path: impl AsRef<Path>) -> Result<Vec<RuckSack>, LoadError> {
     load_from_reader(BufReader::new(file))
 }
 
-pub fn day03(p: DayParams) -> eyre::Result<()> {
+pub fn day03(p: &DayParams) -> eyre::Result<()> {
     let rucksacks = load_from_file(p.input_path())?;
 
     {

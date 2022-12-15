@@ -240,7 +240,7 @@ fn load_from_file_v2(path: impl AsRef<Path>) -> Result<Vec<StrategyLineV2>, Line
     load_from_reader_v2(BufReader::new(file))
 }
 
-pub fn day02(p: DayParams) -> eyre::Result<()> {
+pub fn day02(p: &DayParams) -> eyre::Result<()> {
     {
         let lines = load_from_file(p.input_path())?;
         let scores = lines.iter().map(StrategyLine::score).collect::<Vec<_>>();
