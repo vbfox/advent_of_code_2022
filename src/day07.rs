@@ -18,6 +18,8 @@ use nom::{
     IResult,
 };
 
+use crate::utils::DayParams;
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum InputLine {
     Cd(String),
@@ -179,8 +181,8 @@ impl DirSizes {
     }
 }
 
-pub fn day7() -> eyre::Result<()> {
-    let text = load_from_file("data/day7.txt")?;
+pub fn day07(p: DayParams) -> eyre::Result<()> {
+    let text = load_from_file(p.input_path())?;
     let fs = Fs::from_input(&text);
 
     {

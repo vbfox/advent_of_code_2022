@@ -10,7 +10,7 @@ use nom::{
     IResult,
 };
 
-use crate::utils::{nom_finish, parse_i64, parse_usize};
+use crate::utils::{nom_finish, parse_i64, parse_usize, DayParams};
 
 fn gcd(a: i64, b: i64) -> i64 {
     let mut a = a;
@@ -242,8 +242,8 @@ impl State {
     }
 }
 
-pub fn day11() -> eyre::Result<()> {
-    let input: Input = include_str!("../data/day11.txt").parse()?;
+pub fn day11(p: DayParams) -> eyre::Result<()> {
+    let input: Input = p.read_input()?.parse()?;
     {
         let start = Instant::now();
         let mut state = State::new(input.clone());

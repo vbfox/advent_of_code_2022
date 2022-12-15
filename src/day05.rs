@@ -17,7 +17,7 @@ use nom::{
     IResult,
 };
 
-use crate::utils::{nom_finish, parse_usize};
+use crate::utils::{nom_finish, parse_usize, DayParams};
 
 #[derive(Debug, Clone)]
 struct Instruction {
@@ -245,8 +245,8 @@ fn load_from_file(path: impl AsRef<Path>) -> eyre::Result<Input> {
     load_from_reader(BufReader::new(file))
 }
 
-pub fn day5() -> eyre::Result<()> {
-    let lines = load_from_file("data/day5.txt")?;
+pub fn day05(p: DayParams) -> eyre::Result<()> {
+    let lines = load_from_file(p.input_path())?;
 
     {
         let after = lines.apply_instructions(CraneModel::CrateMover9000)?;

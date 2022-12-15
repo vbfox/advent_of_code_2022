@@ -12,6 +12,8 @@ use std::{
 };
 use thiserror::Error;
 
+use crate::utils::DayParams;
+
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
 struct Calories(i32);
 
@@ -115,8 +117,8 @@ fn load_elves_calories_from_file(path: impl AsRef<Path>) -> Result<Vec<Elf>, Loa
 
 // --------------------------------------------------------------------
 
-pub fn day1() -> eyre::Result<()> {
-    let mut elves = load_elves_calories_from_file("data/day1.txt")?;
+pub fn day01(p: DayParams) -> eyre::Result<()> {
+    let mut elves = load_elves_calories_from_file(p.input_path())?;
 
     elves.sort_by_key(|e| Reverse(e.total_calories()));
 

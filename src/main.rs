@@ -11,20 +11,20 @@ use yansi::Paint;
 
 mod utils;
 
-mod day1;
+mod day01;
+mod day02;
+mod day03;
+mod day04;
+mod day05;
+mod day06;
+mod day07;
+mod day08;
+mod day09;
 mod day10;
 mod day11;
 mod day12;
 mod day13;
 mod day14;
-mod day2;
-mod day3;
-mod day4;
-mod day5;
-mod day6;
-mod day7;
-mod day8;
-mod day9;
 
 struct Day {
     number: u8,
@@ -46,28 +46,22 @@ impl Day {
 
 static DAYS: Lazy<Vec<Day>> = Lazy::new(|| {
     let mut result = Vec::new();
+    result.push(Day::new(1, day01::day01));
+    result.push(Day::new(2, day02::day02));
+    result.push(Day::new(3, day03::day03));
+    result.push(Day::new(4, day04::day04));
+    result.push(Day::new(5, day05::day05));
+    result.push(Day::new(6, day06::day06));
+    result.push(Day::new(7, day07::day07));
+    result.push(Day::new(8, day08::day08));
+    result.push(Day::new(9, day09::day09));
+    result.push(Day::new(10, day10::day10));
+    result.push(Day::new(11, day11::day11));
+    result.push(Day::new(12, day12::day12));
+    result.push(Day::new(13, day13::day13));
     result.push(Day::new(14, day14::day14));
     result
 });
-
-#[allow(dead_code)]
-fn previous_days() -> Result<()> {
-    day1::day1()?;
-    day2::day2()?;
-    day3::day3()?;
-    day4::day4()?;
-    day5::day5()?;
-    day6::day6()?;
-    day7::day7()?;
-    day8::day8()?;
-    day9::day9()?;
-    day10::day10()?;
-    day11::day11()?;
-    day12::day12()?;
-    day13::day13()?;
-
-    Ok(())
-}
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -85,8 +79,8 @@ struct Args {
     test: bool,
 
     /// Enable debug output
-    #[arg(long)]
-    debug: Option<bool>,
+    #[arg(long, default_value_t = false)]
+    debug: bool,
 }
 
 fn setup() -> Result<()> {
@@ -117,7 +111,7 @@ fn main() -> Result<()> {
         number: day.number,
         part,
         test: args.test,
-        debug: args.debug.unwrap_or(false),
+        debug: args.debug,
     })?;
     // previous_days()?;
 

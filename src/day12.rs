@@ -1,4 +1,4 @@
-use crate::utils::{a_start, dijkstra, Vec2D};
+use crate::utils::{a_start, dijkstra, DayParams, Vec2D};
 use rayon::prelude::*;
 use std::{
     collections::HashMap,
@@ -223,14 +223,14 @@ impl HeightMap {
     }
 }
 
-pub fn day12() -> eyre::Result<()> {
-    let height_map: HeightMap = include_str!("../data/day12.txt").parse()?;
+pub fn day12(p: DayParams) -> eyre::Result<()> {
+    let height_map: HeightMap = p.read_input()?.parse()?;
 
-    //height_map.map.paint_color_map(|x| *x, |x| (('a' as u8 + *x as u8 - 1) as char).to_string());
+    if p.debug {
+        height_map.map.paint_color();
+    }
 
-    // height_map.map.paint_color();
-
-    {
+    p.part_1_raw(|| {
         let start = Instant::now();
         let shortest_path = height_map
             .shortest_path_from_start_a_star()
@@ -239,8 +239,22 @@ pub fn day12() -> eyre::Result<()> {
         let elapsed = start.elapsed();
         let result = shortest_path;
         println!("Day 12.1 [A*]: {result} ({elapsed:?})");
-    }
-    {
+
+        if p.debug {
+            let start = Instant::now();
+            let shortest_path = height_map
+                .shortest_path_from_start()
+                .ok_or_else(|| eyre::eyre!("No path found"))?;
+
+            let elapsed = start.elapsed();
+            let result = shortest_path;
+            println!("Day 12.1 [Dijkstra]: {result} ({elapsed:?})");
+        }
+
+        Ok(())
+    })?;
+
+    p.part_2_raw(|| {
         let start = Instant::now();
         let result = height_map
             .shortest_path_from_sea_a_star_rayon()
@@ -248,30 +262,19 @@ pub fn day12() -> eyre::Result<()> {
 
         let elapsed = start.elapsed();
         println!("Day 12.2 [A*]: {result} ({elapsed:?})");
-    }
 
-    #[cfg(not(debug_assertions))]
-    {
-        let start = Instant::now();
-        let shortest_path = height_map
-            .shortest_path_from_start()
-            .ok_or_else(|| eyre::eyre!("No path found"))?;
+        if p.debug {
+            let start = Instant::now();
+            let result = height_map
+                .shortest_path_from_sea_smart()
+                .ok_or_else(|| eyre::eyre!("No path found"))?;
 
-        let elapsed = start.elapsed();
-        let result = shortest_path;
-        println!("Day 12.1 [Dijkstra]: {result} ({elapsed:?})");
-    }
+            let elapsed = start.elapsed();
+            println!("Day 12.2 [Dijkstra]: {result} ({elapsed:?})");
+        }
 
-    #[cfg(not(debug_assertions))]
-    {
-        let start = Instant::now();
-        let result = height_map
-            .shortest_path_from_sea_smart()
-            .ok_or_else(|| eyre::eyre!("No path found"))?;
-
-        let elapsed = start.elapsed();
-        println!("Day 12.2 [Dijkstra]: {result} ({elapsed:?})");
-    }
+        Ok(())
+    })?;
 
     Ok(())
 }

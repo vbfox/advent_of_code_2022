@@ -9,6 +9,8 @@ use std::{
     str::FromStr,
 };
 
+use crate::utils::DayParams;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 struct Section(u32);
 
@@ -97,8 +99,8 @@ fn load_from_file(path: impl AsRef<Path>) -> eyre::Result<Vec<Pair>> {
     load_from_reader(BufReader::new(file))
 }
 
-pub fn day4() -> eyre::Result<()> {
-    let lines = load_from_file("data/day4.txt")?;
+pub fn day04(p: DayParams) -> eyre::Result<()> {
+    let lines = load_from_file(p.input_path())?;
 
     {
         let count = lines.iter().filter(|l| l.fully_contains()).count();

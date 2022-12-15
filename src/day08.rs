@@ -7,6 +7,7 @@ use eyre::bail;
 use eyre::eyre;
 
 use crate::utils::CharSliceExt;
+use crate::utils::DayParams;
 use crate::utils::Vec2D;
 
 struct Tree {
@@ -263,8 +264,8 @@ impl Display for TreeVisibility {
     }
 }
 
-pub fn day8() -> eyre::Result<()> {
-    let forest: Forest = include_str!("../data/day8.txt").parse()?;
+pub fn day08(p: DayParams) -> eyre::Result<()> {
+    let forest: Forest = p.read_input()?.parse()?;
     {
         let start = Instant::now();
         let visibility = TreeVisibility::compute(&forest)?;

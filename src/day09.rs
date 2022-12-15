@@ -3,7 +3,7 @@ use std::{collections::HashSet, fmt::Display, str::FromStr, time::Instant};
 use eyre::eyre;
 use itertools::Itertools;
 
-use crate::utils::Vec2D;
+use crate::utils::{DayParams, Vec2D};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 enum Direction {
@@ -278,8 +278,8 @@ impl BoardState {
     }
 }
 
-pub fn day9() -> eyre::Result<()> {
-    let motions: Motions = include_str!("../data/day9.txt").parse()?;
+pub fn day09(p: DayParams) -> eyre::Result<()> {
+    let motions: Motions = p.read_input()?.parse()?;
     {
         let mut s = BoardState::new(1);
         let start = Instant::now();

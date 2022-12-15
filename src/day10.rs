@@ -5,6 +5,8 @@ use std::{
 };
 use yansi::Paint;
 
+use crate::utils::DayParams;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 enum Instruction {
     Noop,
@@ -257,8 +259,8 @@ impl MatchineState {
     }
 }
 
-pub fn day10() -> eyre::Result<()> {
-    let instructions = parse_instructions(include_str!("../data/day10.txt"))?;
+pub fn day10(p: DayParams) -> eyre::Result<()> {
+    let instructions = parse_instructions(&p.read_input()?)?;
     {
         let start = Instant::now();
         let mut state = MatchineState::new(instructions.clone());

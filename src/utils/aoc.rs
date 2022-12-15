@@ -32,19 +32,24 @@ pub struct DayParams {
 }
 
 impl DayParams {
-    pub fn read_data(&self) -> eyre::Result<String> {
+    pub fn input_path(&self) -> PathBuf {
         let file_name = if self.test {
             format!("day{:02}_test.txt", self.number)
         } else {
             format!("day{:02}.txt", self.number)
         };
         let path = PathBuf::from_iter(&["data", &file_name]);
+        path
+    }
+
+    pub fn read_input(&self) -> eyre::Result<String> {
+        let path = self.input_path();
 
         fs::read_to_string(path.clone())
             .wrap_err_with(|| format!("Failed to read {:?} from {:?}", path, env::current_dir()))
     }
 
-    pub fn run_part(&self, part: DayPart) -> bool {
+    fn run_part(&self, part: DayPart) -> bool {
         match (part, self.part) {
             (DayPart::One, DayPart::One) => true,
             (DayPart::Two, DayPart::Two) => true,
@@ -55,30 +60,47 @@ impl DayParams {
         }
     }
 
-    pub fn run_part_1(&self) -> bool {
-        matches!(self.part, DayPart::One | DayPart::Both)
+    fn part_raw<F>(&self, f: F, part: DayPart) -> eyre::Result<()>
+    where
+        F: Fn() -> eyre::Result<()>,
+    {
+        if self.run_part(part) {
+            f()
+        } else {
+            Ok(())
+        }
     }
 
-    pub fn run_part_2(&self) -> bool {
-        matches!(self.part, DayPart::Two | DayPart::Both)
+    pub fn part_1_raw<F>(&self, f: F) -> eyre::Result<()>
+    where
+        F: Fn() -> eyre::Result<()>,
+    {
+        self.part_raw(f, DayPart::One)
     }
 
-    pub fn part<T, F>(&self, f: F, part: DayPart) -> eyre::Result<()>
+    pub fn part_2_raw<F>(&self, f: F) -> eyre::Result<()>
+    where
+        F: Fn() -> eyre::Result<()>,
+    {
+        self.part_raw(f, DayPart::Two)
+    }
+
+    fn part<T, F>(&self, f: F, part: DayPart) -> eyre::Result<()>
     where
         F: Fn() -> eyre::Result<T>,
         T: Debug,
     {
-        if self.run_part(part) {
-            let start = Instant::now();
-            let result = f()?;
-            let elapsed = start.elapsed();
-            let number = self.number;
-            println!("Day {number}.{part}: {result:?} ({elapsed:?})");
-
-            Ok(())
-        } else {
-            Ok(())
-        }
+        self.part_raw(
+            || {
+                let start = Instant::now();
+                let result = f()?;
+                let elapsed = start.elapsed();
+                let number = self.number;
+                println!("Day {number}.{part}: {result:?} ({elapsed:?})");
+                Ok(())
+            },
+            part,
+        )
     }
 
     pub fn part_1<T, F>(&self, f: F) -> eyre::Result<()>

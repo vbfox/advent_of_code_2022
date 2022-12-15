@@ -2,7 +2,7 @@ use crate::utils::{nom_finish, parse_i32, DayParams, Vec2D};
 use itertools::Itertools;
 use nom::{
     bytes::complete::tag,
-    character::complete::{char, newline},
+    character::complete::{char, line_ending},
     combinator::map,
     multi::{many0, separated_list1},
     sequence::{terminated, tuple},
@@ -79,10 +79,10 @@ struct Scan {
 impl Scan {
     fn parse(input: &str) -> IResult<&str, Self> {
         let mut parser = terminated(
-            map(separated_list1(newline, PathLine::parse), |lines| Self {
-                lines,
+            map(separated_list1(line_ending, PathLine::parse), |lines| {
+                Self { lines }
             }),
-            many0(newline),
+            many0(line_ending),
         );
         parser(input)
     }
@@ -324,19 +324,25 @@ impl Cave {
 }
 
 pub fn day14(p: DayParams) -> eyre::Result<()> {
-    let input = &p.read_data()?;
+    let input = &p.read_input()?;
 
     let scan = nom_finish(Scan::parse, input)?;
 
     p.part_1(|| {
         let mut cave = Cave::from_scan(&scan, Point::new(500, 0), false);
         cave.emit_sand_util_filled();
+        if p.debug {
+            cave.paint();
+        }
         Ok(cave.count_sand())
     })?;
 
     p.part_2(|| {
         let mut cave = Cave::from_scan(&scan, Point::new(500, 0), true);
         cave.emit_sand_util_filled();
+        if p.debug && p.test {
+            cave.paint();
+        }
         Ok(cave.count_sand())
     })?;
 

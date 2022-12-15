@@ -1,5 +1,5 @@
-use crate::utils::SingleExt;
 use crate::utils::{find_common_items, CharSliceExt};
+use crate::utils::{DayParams, SingleExt};
 use eyre::eyre;
 use std::fmt::{self, Display, Formatter};
 use std::io;
@@ -222,8 +222,8 @@ fn load_from_file(path: impl AsRef<Path>) -> Result<Vec<RuckSack>, LoadError> {
     load_from_reader(BufReader::new(file))
 }
 
-pub fn day3() -> eyre::Result<()> {
-    let rucksacks = load_from_file("data/day3.txt")?;
+pub fn day03(p: DayParams) -> eyre::Result<()> {
+    let rucksacks = load_from_file(p.input_path())?;
 
     {
         let priorities = rucksacks

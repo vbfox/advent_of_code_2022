@@ -1,5 +1,3 @@
-use std::time::Instant;
-
 use itertools::{EitherOrBoth, Itertools};
 use nom::{
     branch::alt,
@@ -11,7 +9,7 @@ use nom::{
     IResult,
 };
 
-use crate::utils::{nom_finish, parse_i32};
+use crate::utils::{nom_finish, parse_i32, DayParams};
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 enum Paket {
@@ -166,23 +164,13 @@ impl PaketFile {
     }
 }
 
-pub fn day13() -> eyre::Result<()> {
-    let input = include_str!("../data/day13.txt");
+pub fn day13(p: DayParams) -> eyre::Result<()> {
+    let input = &p.read_input()?;
     let input = nom_finish(PaketFile::parse, input)?;
-    {
-        let start = Instant::now();
-        let result = input.part1();
 
-        let elapsed = start.elapsed();
-        println!("Day 13.1: {result} ({elapsed:?})");
-    }
-    {
-        let start = Instant::now();
-        let result = input.part2();
+    p.part_1(|| Ok(input.part1()))?;
+    p.part_2(|| Ok(input.part2()))?;
 
-        let elapsed = start.elapsed();
-        println!("Day 13.2: {result} ({elapsed:?})");
-    }
     Ok(())
 }
 

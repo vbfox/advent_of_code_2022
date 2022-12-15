@@ -6,6 +6,8 @@ use std::{
     path::Path,
 };
 
+use crate::utils::DayParams;
+
 fn load_from_file(path: impl AsRef<Path>) -> io::Result<String> {
     let file = File::open(path)?;
     io::read_to_string(BufReader::new(file))
@@ -32,8 +34,8 @@ fn find_marker(s: &str, len: usize) -> Option<usize> {
     None
 }
 
-pub fn day6() -> eyre::Result<()> {
-    let text = load_from_file("data/day6.txt")?;
+pub fn day06(p: DayParams) -> eyre::Result<()> {
+    let text = load_from_file(p.input_path())?;
 
     {
         let marker = find_marker(&text, 4).ok_or_else(|| eyre!("No marker found"))?;
