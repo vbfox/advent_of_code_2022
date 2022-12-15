@@ -11,10 +11,12 @@ use std::{
 };
 
 mod aoc;
+mod point;
 mod shortest_path;
 mod vec2d;
 
 pub use aoc::{DayParams, DayPart};
+pub use point::Point;
 pub use shortest_path::{a_start, dijkstra, DijkstraResult};
 pub use vec2d::Vec2D;
 
