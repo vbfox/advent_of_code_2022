@@ -6,6 +6,9 @@ build *ARGS:
 run *ARGS:
     cargo run -- {{ARGS}}
 
+runfast *ARGS:
+    cargo run --release -- {{ARGS}}
+
 test *ARGS:
     cargo nextest run {{ARGS}}
 

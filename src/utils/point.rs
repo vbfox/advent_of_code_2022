@@ -1,4 +1,4 @@
-use super::parse_i32;
+use nom::character::complete;
 use nom::{bytes::complete::tag, combinator::map, sequence::tuple, IResult};
 use std::fmt::Debug;
 use std::{
@@ -8,21 +8,31 @@ use std::{
 
 #[derive(PartialEq, Eq, Clone, Copy, Hash)]
 pub struct Point {
-    x: i32,
-    y: i32,
+    pub x: i32,
+    pub y: i32,
 }
 
 impl Point {
-    fn new(x: i32, y: i32) -> Self {
+    pub fn new(x: i32, y: i32) -> Self {
         Self { x, y }
     }
 
-    fn parse<'a>(input: &'a str, separator: &str) -> IResult<&'a str, Self> {
-        let mut parser = map(
-            tuple((parse_i32, tag(separator), parse_i32)),
-            |(x, _, y)| Self::new(x, y),
-        );
-        parser(input)
+    pub fn parser<'a>(separator: &'a str) -> impl Fn(&str) -> IResult<&str, Self> + 'a {
+        move |input| {
+            let mut parser = map(
+                tuple((complete::i32, tag(separator), complete::i32)),
+                |(x, _, y)| Self::new(x, y),
+            );
+            parser(input)
+        }
+    }
+
+    pub fn parse(input: &str) -> IResult<&str, Self> {
+        Self::parser(",")(input)
+    }
+
+    pub fn abs(&self) -> Point {
+        Point::new(self.x.abs(), self.y.abs())
     }
 }
 
