@@ -45,22 +45,22 @@ impl Day {
 }
 
 static DAYS: Lazy<Vec<Day>> = Lazy::new(|| {
-    let mut result = Vec::new();
-    result.push(Day::new(1, day01::day01));
-    result.push(Day::new(2, day02::day02));
-    result.push(Day::new(3, day03::day03));
-    result.push(Day::new(4, day04::day04));
-    result.push(Day::new(5, day05::day05));
-    result.push(Day::new(6, day06::day06));
-    result.push(Day::new(7, day07::day07));
-    result.push(Day::new(8, day08::day08));
-    result.push(Day::new(9, day09::day09));
-    result.push(Day::new(10, day10::day10));
-    result.push(Day::new(11, day11::day11));
-    result.push(Day::new(12, day12::day12));
-    result.push(Day::new(13, day13::day13));
-    result.push(Day::new(14, day14::day14));
-    result
+    vec![
+        Day::new(1, day01::day01),
+        Day::new(2, day02::day02),
+        Day::new(3, day03::day03),
+        Day::new(4, day04::day04),
+        Day::new(5, day05::day05),
+        Day::new(6, day06::day06),
+        Day::new(7, day07::day07),
+        Day::new(8, day08::day08),
+        Day::new(9, day09::day09),
+        Day::new(10, day10::day10),
+        Day::new(11, day11::day11),
+        Day::new(12, day12::day12),
+        Day::new(13, day13::day13),
+        Day::new(14, day14::day14),
+    ]
 });
 
 #[derive(Parser, Debug)]

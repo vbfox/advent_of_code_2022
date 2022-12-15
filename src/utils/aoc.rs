@@ -38,8 +38,8 @@ impl DayParams {
         } else {
             format!("day{:02}.txt", self.number)
         };
-        let path = PathBuf::from_iter(&["data", &file_name]);
-        path
+
+        PathBuf::from_iter(&["data", &file_name])
     }
 
     pub fn read_input(&self) -> eyre::Result<String> {
@@ -50,6 +50,7 @@ impl DayParams {
     }
 
     fn run_part(&self, part: DayPart) -> bool {
+        #[allow(clippy::match_like_matches_macro)]
         match (part, self.part) {
             (DayPart::One, DayPart::One) => true,
             (DayPart::Two, DayPart::Two) => true,

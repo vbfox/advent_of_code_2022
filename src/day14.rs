@@ -139,10 +139,7 @@ impl Cave {
             let offset = match delta {
                 Point { x: 0, y } => Point::new(0, y.signum()),
                 Point { x, y: 0 } => Point::new(x.signum(), 0),
-                _ => panic!(
-                    "Invalid delta between {:?} and {:?}: {:?}",
-                    start, end, delta
-                ),
+                _ => panic!("Invalid delta between {start:?} and {end:?}: {delta:?}"),
             };
 
             let mut current = start;
@@ -161,7 +158,7 @@ impl Cave {
     }
 
     fn draw_scan(&mut self, scan: &Scan) {
-        for line in scan.lines.iter() {
+        for line in &scan.lines {
             self.draw_path_line(line);
         }
     }
@@ -207,23 +204,23 @@ impl Cave {
                 (Some(CavePosition::Air), _, _) => {
                     current = below;
                 }
-                (None, _, _) => return (false, visited),
+
                 // If the tile immediately below is blocked (by rock or sand), the unit of sand
                 // attempts to instead move diagonally one step down and to the left
                 (_, Some(CavePosition::Air), _) => {
                     current = down_left;
                 }
-                (_, None, _) => {
-                    return (false, visited);
-                }
+
                 // If that tile is blocked, the unit of sand attempts to instead move diagonally one
                 // step down and to the right
                 (_, _, Some(CavePosition::Air)) => {
                     current = down_right;
                 }
-                (_, _, None) => {
+
+                (None, _, _) | (_, None, _) | (_, _, None) => {
                     return (false, visited);
                 }
+
                 _ => {
                     break;
                 }
@@ -251,6 +248,11 @@ impl Cave {
     }
 
     #[allow(dead_code)]
+    #[allow(
+        clippy::cast_possible_truncation,
+        clippy::cast_possible_wrap,
+        clippy::cast_sign_loss
+    )]
     fn paint(&self) {
         let mut cloned = self.clone();
         let (_, points) = cloned.emit_sand();
@@ -310,7 +312,6 @@ impl Cave {
 
         structure.paint_color_map(
             |p| match p {
-                '.' => 0,
                 '#' => 1,
                 '+' => 2,
                 'o' => 3,
@@ -318,7 +319,7 @@ impl Cave {
                 'x' => 5,
                 _ => 0,
             },
-            |p| p.to_string(),
+            std::string::ToString::to_string,
         );
     }
 }
