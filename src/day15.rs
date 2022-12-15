@@ -146,6 +146,7 @@ impl Sensors {
         parser(input)
     }
 
+    #[allow(clippy::pedantic)]
     fn paint(&self) {
         let (min_x, max_x) = self
             .sensors
@@ -198,7 +199,7 @@ impl Sensors {
                 'S' => 3,
                 _ => 0,
             },
-            |c| c.to_string(),
+            std::string::ToString::to_string,
         );
     }
 
@@ -240,7 +241,7 @@ impl Sensors {
                         return 1;
                     }
                 }
-                return 0;
+                0
             })
             .sum()
     }
@@ -251,8 +252,7 @@ impl Sensors {
             .ok_or_else(|| eyre!("No start value of {:?}", range))
             .unwrap()
         {
-            Bound::Included(x) => *x,
-            Bound::Excluded(x) => *x,
+            Bound::Included(x) | Bound::Excluded(x) => *x,
             Bound::Unbounded => panic!("Unbounded range"),
         }
     }
@@ -263,8 +263,7 @@ impl Sensors {
             .ok_or_else(|| eyre!("No end value of {:?}", range))
             .unwrap()
         {
-            Bound::Included(x) => *x,
-            Bound::Excluded(x) => *x,
+            Bound::Included(x) | Bound::Excluded(x) => *x,
             Bound::Unbounded => panic!("Unbounded range"),
         }
     }
@@ -273,21 +272,21 @@ impl Sensors {
     fn simplify_ranges(ranges: Vec<ContinuousRange<i32>>) -> Vec<ContinuousRange<i32>> {
         let mut ranges = ranges;
 
-        ranges.sort_by(|a, b| Self::range_start(&a).cmp(&Self::range_start(&b)).reverse());
+        ranges.sort_by(|a, b| Self::range_start(a).cmp(&Self::range_start(b)).reverse());
 
         // let mut ranges = VecDeque::from(ranges);
         let mut simplified = vec![];
         let mut current = ranges.pop();
         while let Some(r) = ranges.pop() {
-            match current {
-                Some(c) => match c.union(&r) {
-                    Some(u) => current = Some(u),
-                    None => {
-                        simplified.push(c);
-                        current = Some(r);
-                    }
-                },
-                None => current = Some(r.clone()),
+            if let Some(c) = current {
+                if let Some(u) = c.union(&r) {
+                    current = Some(u);
+                } else {
+                    simplified.push(c);
+                    current = Some(r);
+                }
+            } else {
+                current = Some(r.clone());
             }
         }
 
@@ -308,7 +307,7 @@ impl Sensors {
                 .map(|s| s.range_on_y(y).intersection(&test_range))
                 .filter(|r| !r.is_empty());
             let simplified = Self::simplify_ranges(y_ranges.collect());
-            if simplified.len() != 1 {
+            if simplified.len() > 1 {
                 let x = Self::range_end(&simplified[0]) + 1;
                 let point = Point::new(x, y);
                 Some(point)
@@ -321,7 +320,7 @@ impl Sensors {
     fn tuning_frequency(&self, min: i32, max: i32) -> Option<i64> {
         let p = self.first_cannot_contain_beacon(min, max)?;
 
-        Some((p.x as i64) * 4000000 + (p.y as i64))
+        Some(i64::from(p.x) * 4_000_000 + i64::from(p.y))
     }
 }
 

@@ -17,7 +17,7 @@ impl Point {
         Self { x, y }
     }
 
-    pub fn parser<'a>(separator: &'a str) -> impl Fn(&str) -> IResult<&str, Self> + 'a {
+    pub fn parser(separator: &str) -> impl Fn(&str) -> IResult<&str, Self> + '_ {
         move |input| {
             let mut parser = map(
                 tuple((complete::i32, tag(separator), complete::i32)),
@@ -31,7 +31,7 @@ impl Point {
         Self::parser(",")(input)
     }
 
-    pub fn abs(&self) -> Point {
+    pub fn abs(self) -> Point {
         Point::new(self.x.abs(), self.y.abs())
     }
 }
