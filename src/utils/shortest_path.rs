@@ -99,25 +99,27 @@ pub struct DijkstraResult<TVertex, TDistance> {
 
 // https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm
 #[allow(clippy::needless_pass_by_value)]
-pub fn dijkstra<TVertex, TDistance, FNeighbors, FDistance>(
+pub fn dijkstra<TVertex, TDistance, FNeighbors, FDistance, TNodeList>(
     start: TVertex,
     goal: Option<TVertex>,
     neighbors: FNeighbors,
     neighbor_distance: FDistance,
-    all_nodes: Vec<TVertex>,
+    all_nodes: TNodeList,
 ) -> DijkstraResult<TVertex, TDistance>
 where
-    FNeighbors: Fn(&TVertex) -> Vec<TVertex>,
+    FNeighbors: Fn(&TVertex) -> TNodeList,
     FDistance: Fn(&TVertex, &TVertex, &TDistance) -> TDistance,
     TVertex: Eq + Hash + Clone,
     TDistance: Default + Copy + Ord + Add<Output = TDistance>,
+    TNodeList: IntoIterator<Item = TVertex>,
 {
     // Mark all nodes unvisited. Create a set of all the unvisited nodes called the unvisited set.
     let mut unvisited = HashSet::<TVertex>::new();
     let mut visited = HashSet::<TVertex>::new();
-    unvisited.reserve(all_nodes.len());
-    for node in all_nodes {
-        unvisited.insert(node.clone());
+    let all_nodes_iterator = all_nodes.into_iter();
+    unvisited.reserve(all_nodes_iterator.size_hint().0);
+    for node in all_nodes_iterator {
+        unvisited.insert(node);
     }
 
     // Assign to every node a tentative distance value: set it to zero for our initial node and to infinity
@@ -136,23 +138,26 @@ where
 
         // For the current node, consider all of its unvisited neighbors and calculate their tentative distances
         // through the current node.
-        for neighbor in neighbors(&current).iter().filter(|p| !visited.contains(p)) {
+        for neighbor in neighbors(&current)
+            .into_iter()
+            .filter(|p| !visited.contains(p))
+        {
             // We discovered a yet-unknown node, add it to the unvisited set. This is a variant on dijkstra's standard
             // implementation but allow to explore graphs with yet-unknown paths.
-            if !unvisited.contains(neighbor) {
+            if !unvisited.contains(&neighbor) {
                 unvisited.insert(neighbor.clone());
             }
 
             let new_tentative_distance =
-                tentative_distance + neighbor_distance(&current, neighbor, &tentative_distance);
-            let current_tentative_distance = tentative_distances.get(neighbor);
+                tentative_distance + neighbor_distance(&current, &neighbor, &tentative_distance);
+            let current_tentative_distance = tentative_distances.get(&neighbor);
 
             // Compare the newly calculated tentative distance to the one currently assigned to the neighbor and
             // assign it the smaller one.
             if current_tentative_distance.is_none()
                 || new_tentative_distance < *current_tentative_distance.unwrap()
             {
-                tentative_distances.insert(neighbor.clone(), new_tentative_distance);
+                tentative_distances.insert(neighbor, new_tentative_distance);
             }
         }
 
