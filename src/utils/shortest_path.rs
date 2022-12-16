@@ -114,6 +114,7 @@ where
 {
     // Mark all nodes unvisited. Create a set of all the unvisited nodes called the unvisited set.
     let mut unvisited = HashSet::<TVertex>::new();
+    let mut visited = HashSet::<TVertex>::new();
     unvisited.reserve(all_nodes.len());
     for node in all_nodes {
         unvisited.insert(node.clone());
@@ -135,7 +136,13 @@ where
 
         // For the current node, consider all of its unvisited neighbors and calculate their tentative distances
         // through the current node.
-        for neighbor in neighbors(&current).iter().filter(|p| unvisited.contains(p)) {
+        for neighbor in neighbors(&current).iter().filter(|p| !visited.contains(p)) {
+            // We discovered a yet-unknown node, add it to the unvisited set. This is a variant on dijkstra's standard
+            // implementation but allow to explore graphs with yet-unknown paths.
+            if !unvisited.contains(neighbor) {
+                unvisited.insert(neighbor.clone());
+            }
+
             let new_tentative_distance = tentative_distance + neighbor_distance(&current, neighbor);
             let current_tentative_distance = tentative_distances.get(neighbor);
 
@@ -151,6 +158,7 @@ where
         // When we are done considering all of the unvisited neighbors of the current node, mark the current node
         // as visited and remove it from the unvisited set
         unvisited.remove(&current);
+        visited.insert(current.clone());
 
         // If the destination node has been marked visited
         if let Some(ref end) = goal && &current == end {

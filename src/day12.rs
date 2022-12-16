@@ -130,14 +130,7 @@ impl HeightMap {
     where
         FGetNeighbors: Fn(&Point) -> Vec<Point>,
     {
-        let mut all_nodes = Vec::new();
-        for row in 0..self.map.rows {
-            for col in 0..self.map.cols {
-                all_nodes.push(Point::new(row, col));
-            }
-        }
-
-        let result = dijkstra(start, end, get_neighbors, |_a, _b| 1, all_nodes);
+        let result = dijkstra(start, end, get_neighbors, |_a, _b| 1, vec![]);
 
         (result.distance_to_end, result.distances)
     }
@@ -162,7 +155,7 @@ impl HeightMap {
     }
 
     #[allow(dead_code)]
-    fn shortest_path_from_start(&self) -> Option<i32> {
+    fn shortest_path_from_start_dijkstra(&self) -> Option<i32> {
         // Use the reverse function as it's faster to run
         let (_, shortest_from_end) =
             self.shortest_path_dijkstra(self.end, None, |p| self.movable_neighbors_rev(*p));
@@ -243,7 +236,7 @@ pub fn day12(p: &DayParams) -> eyre::Result<()> {
         if p.debug {
             let start = Instant::now();
             let shortest_path = height_map
-                .shortest_path_from_start()
+                .shortest_path_from_start_dijkstra()
                 .ok_or_else(|| eyre::eyre!("No path found"))?;
 
             let elapsed = start.elapsed();
@@ -305,7 +298,7 @@ abdefghi"#;
     #[test]
     fn part1() -> eyre::Result<()> {
         let height_map = TEST_VECTOR.parse::<HeightMap>()?;
-        let shortest_path = height_map.shortest_path_from_start().unwrap();
+        let shortest_path = height_map.shortest_path_from_start_dijkstra().unwrap();
 
         assert_eq!(shortest_path, 31);
         Ok(())
