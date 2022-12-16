@@ -108,7 +108,7 @@ pub fn dijkstra<TVertex, TDistance, FNeighbors, FDistance>(
 ) -> DijkstraResult<TVertex, TDistance>
 where
     FNeighbors: Fn(&TVertex) -> Vec<TVertex>,
-    FDistance: Fn(&TVertex, &TVertex) -> TDistance,
+    FDistance: Fn(&TVertex, &TVertex, &TDistance) -> TDistance,
     TVertex: Eq + Hash + Clone,
     TDistance: Default + Copy + Ord + Add<Output = TDistance>,
 {
@@ -143,7 +143,8 @@ where
                 unvisited.insert(neighbor.clone());
             }
 
-            let new_tentative_distance = tentative_distance + neighbor_distance(&current, neighbor);
+            let new_tentative_distance =
+                tentative_distance + neighbor_distance(&current, neighbor, &tentative_distance);
             let current_tentative_distance = tentative_distances.get(neighbor);
 
             // Compare the newly calculated tentative distance to the one currently assigned to the neighbor and

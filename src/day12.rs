@@ -130,7 +130,7 @@ impl HeightMap {
     where
         FGetNeighbors: Fn(&Point) -> Vec<Point>,
     {
-        let result = dijkstra(start, end, get_neighbors, |_a, _b| 1, vec![]);
+        let result = dijkstra(start, end, get_neighbors, |_, _, _| 1, vec![]);
 
         (result.distance_to_end, result.distances)
     }
