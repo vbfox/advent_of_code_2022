@@ -122,7 +122,6 @@ impl HeightMap {
     }
 
     fn shortest_path_dijkstra<FGetNeighbors>(
-        &self,
         start: Point,
         end: Option<Point>,
         get_neighbors: FGetNeighbors,
@@ -158,7 +157,7 @@ impl HeightMap {
     fn shortest_path_from_start_dijkstra(&self) -> Option<i32> {
         // Use the reverse function as it's faster to run
         let (_, shortest_from_end) =
-            self.shortest_path_dijkstra(self.end, None, |p| self.movable_neighbors_rev(*p));
+            Self::shortest_path_dijkstra(self.end, None, |p| self.movable_neighbors_rev(*p));
 
         shortest_from_end.get(&self.start).copied()
     }
@@ -186,8 +185,9 @@ impl HeightMap {
         self.sea_level_points()
             .par_iter()
             .filter_map(|p| {
-                let (dist, _) =
-                    self.shortest_path_dijkstra(*p, Some(self.end), |p| self.movable_neighbors(*p));
+                let (dist, _) = Self::shortest_path_dijkstra(*p, Some(self.end), |p| {
+                    self.movable_neighbors(*p)
+                });
                 dist
             })
             .min()
@@ -196,7 +196,7 @@ impl HeightMap {
     #[allow(dead_code)]
     fn shortest_path_from_sea_smart(&self) -> Option<i32> {
         let (_, shortest_from_end) =
-            self.shortest_path_dijkstra(self.end, None, |p| self.movable_neighbors_rev(*p));
+            Self::shortest_path_dijkstra(self.end, None, |p| self.movable_neighbors_rev(*p));
 
         self.sea_level_points()
             .par_iter()
