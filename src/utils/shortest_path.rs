@@ -2,6 +2,7 @@ use std::{
     collections::{BTreeSet, HashMap, HashSet},
     fmt::Debug,
     hash::Hash,
+    ops::Add,
 };
 
 fn reconstruct_path<T>(came_from: &HashMap<T, T>, current: &T) -> Vec<T>
@@ -88,30 +89,31 @@ where
 }
 
 #[derive(Debug, Clone)]
-pub struct DijkstraResult<TNode> {
+pub struct DijkstraResult<TVertex, TDistance> {
     /// The shortest path from the start to the end, or at all if no end in specified
-    pub distance_to_end: Option<i32>,
+    pub distance_to_end: Option<TDistance>,
 
     /// Distances from the start to all nodes.
-    pub distances: HashMap<TNode, i32>,
+    pub distances: HashMap<TVertex, TDistance>,
 }
 
 // https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm
 #[allow(clippy::needless_pass_by_value)]
-pub fn dijkstra<TNode, FNeighbors, FDistance>(
-    start: TNode,
-    goal: Option<TNode>,
+pub fn dijkstra<TVertex, TDistance, FNeighbors, FDistance>(
+    start: TVertex,
+    goal: Option<TVertex>,
     neighbors: FNeighbors,
     neighbor_distance: FDistance,
-    all_nodes: Vec<TNode>,
-) -> DijkstraResult<TNode>
+    all_nodes: Vec<TVertex>,
+) -> DijkstraResult<TVertex, TDistance>
 where
-    FNeighbors: Fn(&TNode) -> Vec<TNode>,
-    FDistance: Fn(&TNode, &TNode) -> i32,
-    TNode: Eq + Hash + Clone,
+    FNeighbors: Fn(&TVertex) -> Vec<TVertex>,
+    FDistance: Fn(&TVertex, &TVertex) -> TDistance,
+    TVertex: Eq + Hash + Clone,
+    TDistance: Default + Copy + Ord + Add<Output = TDistance>,
 {
     // Mark all nodes unvisited. Create a set of all the unvisited nodes called the unvisited set.
-    let mut unvisited = HashSet::<TNode>::new();
+    let mut unvisited = HashSet::<TVertex>::new();
     unvisited.reserve(all_nodes.len());
     for node in all_nodes {
         unvisited.insert(node.clone());
@@ -119,9 +121,9 @@ where
 
     // Assign to every node a tentative distance value: set it to zero for our initial node and to infinity
     // for all other nodes.
-    let mut tentative_distances = HashMap::<TNode, i32>::new();
+    let mut tentative_distances = HashMap::<TVertex, TDistance>::new();
     tentative_distances.reserve(unvisited.capacity());
-    tentative_distances.insert(start.clone(), 0);
+    tentative_distances.insert(start.clone(), TDistance::default());
 
     // Set the initial node as current
     let mut current = start;
